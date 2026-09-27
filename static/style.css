@@ -1,0 +1,163 @@
+/* K&K Auctions — dark green / gold industrial theme */
+:root {
+  --green-900: #0b1f16;
+  --green-800: #123524;
+  --green-700: #1b4a32;
+  --gold: #c9a227;
+  --gold-light: #e8c547;
+  --ink: #f2f4f1;
+  --muted: #9db0a2;
+  --card: #10291d;
+  --card-border: #234a35;
+  --danger: #c0392b;
+  --ok: #2e7d4f;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--green-900);
+  color: var(--ink);
+  line-height: 1.55;
+}
+a { color: var(--gold-light); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.wrap { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
+
+/* header */
+.site-header { background: #081711; border-bottom: 3px solid var(--gold); position: sticky; top: 0; z-index: 50; }
+.header-inner { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; flex-wrap: wrap; gap: 8px; }
+.brand { display: flex; align-items: baseline; gap: 8px; }
+.brand:hover { text-decoration: none; }
+.brand-mark { font-size: 1.7rem; font-weight: 900; color: var(--gold-light); letter-spacing: 1px; }
+.brand-sub { font-size: 0.85rem; font-weight: 700; color: var(--muted); letter-spacing: 4px; }
+.nav { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.nav a { color: var(--ink); font-weight: 600; }
+.nav a:hover { color: var(--gold-light); }
+.nav-user { color: var(--muted); font-size: 0.9rem; }
+.admin-link { color: var(--gold-light) !important; }
+
+/* buttons */
+.btn { display: inline-block; padding: 10px 18px; border-radius: 8px; border: 1px solid transparent;
+  font-weight: 700; cursor: pointer; text-align: center; }
+.btn:hover { text-decoration: none; filter: brightness(1.1); }
+.btn-gold { background: var(--gold); color: #1a1405; }
+.btn-outline { background: transparent; color: var(--gold-light); border-color: var(--gold); }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-watched { background: var(--green-700); color: var(--gold-light); border-color: var(--gold); }
+.btn-sm { padding: 6px 12px; font-size: 0.85rem; }
+.btn-lg { padding: 12px 26px; font-size: 1.05rem; }
+.inline-form { display: inline; }
+
+/* flashes */
+.flashes { margin-top: 14px; }
+.flash { padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; font-weight: 600; }
+.flash-ok { background: #123f27; border: 1px solid var(--ok); }
+.flash-error { background: #451a15; border: 1px solid var(--danger); }
+.flash-warn { background: #4a3a10; border: 1px solid var(--gold); }
+
+/* hero */
+.hero { text-align: center; padding: 48px 16px; background: linear-gradient(135deg, var(--green-800), var(--green-900));
+  border: 1px solid var(--card-border); border-radius: 14px; margin: 24px 0; }
+.hero h1 { margin: 0 0 8px; font-size: 2rem; color: var(--gold-light); }
+.hero p { color: var(--muted); margin: 0 0 18px; }
+
+h2 { color: var(--gold-light); margin-top: 32px; border-bottom: 2px solid var(--card-border); padding-bottom: 6px; }
+
+/* auction cards */
+.auction-list { display: grid; gap: 14px; margin: 16px 0; }
+.auction-card { display: block; background: var(--card); border: 1px solid var(--card-border);
+  border-radius: 12px; padding: 18px; }
+.auction-card:hover { border-color: var(--gold); text-decoration: none; }
+.auction-card h3 { margin: 0 0 6px; color: var(--ink); }
+.auction-card p { margin: 0 0 10px; }
+
+/* lot grid */
+.lot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; margin: 16px 0; }
+.lot-card { background: var(--card); border: 1px solid var(--card-border); border-radius: 12px; overflow: hidden; }
+.lot-card img { width: 100%; height: 180px; object-fit: cover; display: block; background: var(--green-800); }
+.lot-card-body { padding: 12px 14px; }
+.lot-card-body h4 { margin: 4px 0 8px; font-size: 1rem; }
+.lot-card-body h4, .lot-card-body a h4 { color: var(--ink); }
+.lot-no { font-size: 0.8rem; color: var(--gold-light); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.lot-meta { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+.bid { font-size: 1.25rem; font-weight: 800; color: var(--gold-light); }
+
+/* countdown + pills */
+.countdown { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--gold-light); }
+.countdown.big { font-size: 1.4rem; margin: 8px 0; }
+.countdown.small { font-size: 0.9rem; }
+.pill { display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 0.8rem; font-weight: 800; margin: 6px 0; }
+.pill-live { background: #3d0f0c; color: #ff8a7a; border: 1px solid #a33; }
+.pill-soon { background: #3a2f0c; color: var(--gold-light); border: 1px solid var(--gold); }
+.pill-ended { background: #222; color: #999; border: 1px solid #444; }
+.pill-outbid { background: #3a2f0c; color: #ffb84d; border: 1px solid var(--gold); }
+
+/* auction head + filters */
+.auction-head { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin: 20px 0; }
+.auction-timer { text-align: right; min-width: 220px; }
+.filters { display: flex; gap: 10px; margin: 16px 0; flex-wrap: wrap; }
+.filters input[type="search"], .filters select { flex: 1; min-width: 150px; }
+
+/* forms */
+input, select, textarea { background: #0d2318; border: 1px solid var(--card-border); color: var(--ink);
+  border-radius: 8px; padding: 10px 12px; font-size: 1rem; width: 100%; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--gold); }
+label { display: block; margin: 12px 0 4px; font-weight: 600; }
+.form-card { background: var(--card); border: 1px solid var(--card-border); border-radius: 12px; padding: 20px; max-width: 720px; }
+.form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+.auth-box { max-width: 440px; margin: 40px auto; background: var(--card); border: 1px solid var(--card-border);
+  border-radius: 12px; padding: 28px; }
+.auth-box h1 { margin-top: 0; }
+
+/* lot detail */
+.crumb { margin: 16px 0 4px; }
+.lot-detail { display: grid; grid-template-columns: 1.1fr 1fr; gap: 28px; margin: 12px 0 30px; }
+.lot-gallery img#main-photo { width: 100%; border-radius: 12px; border: 1px solid var(--card-border); background: var(--green-800); }
+.thumbs { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.thumb { width: 72px; height: 54px; object-fit: cover; border-radius: 6px; cursor: pointer; opacity: 0.6; border: 2px solid transparent; }
+.thumb.active { opacity: 1; border-color: var(--gold); }
+.lot-info h1 { margin: 6px 0 10px; font-size: 1.6rem; }
+.bid-box { background: var(--card); border: 1px solid var(--card-border); border-radius: 12px; padding: 16px; margin: 14px 0; }
+.current-bid { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+.current-bid strong { font-size: 1.8rem; color: var(--gold-light); }
+.bid-form { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+.bid-form label { margin: 0; flex: 1; min-width: 160px; }
+table.specs { width: 100%; border-collapse: collapse; margin: 14px 0; }
+table.specs th, table.specs td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--card-border); }
+table.specs th { color: var(--muted); width: 40%; font-weight: 600; }
+.desc { white-space: pre-line; }
+
+table.bids { width: 100%; border-collapse: collapse; margin: 12px 0; background: var(--card); border-radius: 12px; overflow: hidden; }
+table.bids th, table.bids td { padding: 10px 12px; border-bottom: 1px solid var(--card-border); text-align: left; }
+table.bids th { color: var(--muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; }
+tr.top-bid td { background: rgba(201, 162, 39, 0.08); }
+
+/* how it works */
+.how { background: var(--card); border: 1px solid var(--card-border); border-radius: 12px; padding: 24px; margin: 36px 0; }
+.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; padding-left: 20px; }
+.steps li { margin-bottom: 8px; }
+
+.empty { text-align: center; padding: 48px 16px; color: var(--muted); }
+
+/* admin */
+.admin-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+.admin-table td.actions { white-space: nowrap; }
+.photo-manage { display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0; }
+.photo-item img { width: 100px; height: 75px; object-fit: cover; border-radius: 6px; display: block; }
+
+/* footer */
+.site-footer { margin-top: 48px; border-top: 3px solid var(--gold); background: #081711; padding: 24px 0; }
+.footer-inner { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.muted { color: var(--muted); }
+.small { font-size: 0.85rem; }
+
+@media (max-width: 720px) {
+  .lot-detail { grid-template-columns: 1fr; }
+  .hero h1 { font-size: 1.5rem; }
+  .auction-timer { text-align: left; }
+  table.bids { font-size: 0.9rem; }
+  table.bids th, table.bids td { padding: 8px 6px; }
+}

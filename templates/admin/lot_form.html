@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if lot else 'New' }} lot — {{ auction.title }}{% endblock %}
+{% block content %}
+
+<p class="crumb"><a href="{{ url_for('admin_auction_edit', auction_id=auction.id) }}">← {{ auction.title }}</a></p>
+<h1>{{ 'Edit lot' if lot else 'New lot' }}</h1>
+
+<form method="post" enctype="multipart/form-data" class="form-card">
+  <div class="form-row">
+    <label>Lot number
+      <input type="number" name="lot_number" min="1" required value="{{ form.lot_number }}">
+    </label>
+    <label>Category
+      <input type="text" name="category" list="cats" value="{{ form.category }}" placeholder="e.g. cars, engines, rims">
+      <datalist id="cats">
+        <option value="cars"></option>
+        <option value="catalytic converters"></option>
+        <option value="engines"></option>
+        <option value="transmissions"></option>
+        <option value="rims"></option>
+        <option value="equipment"></option>
+        <option value="parts"></option>
+      </datalist>
+    </label>
+    <label>Status
+      <select name="status">
+        {% for s in ['active', 'sold', 'no_sale'] %}
+        <option value="{{ s }}" {% if form.status == s %}selected{% endif %}>{{ s|replace('_', ' ')|title }}</option>
+        {% endfor %}
+      </select>
+    </label>
+  </div>
+  <label>Title
+    <input type="text" name="title" required value="{{ form.title }}">
+  </label>
+  <label>Description
+    <textarea name="description" rows="5">{{ form.description }}</textarea>
+  </label>
+  <div class="form-row">
+    <label>Starting bid ($)
+      <input type="number" name="starting_bid" step="0.01" min="0" required value="{{ form.starting_bid }}">
+    </label>
+    <label>Bid increment ($)
+      <input type="number" name="bid_increment" step="0.01" min="0.01" required value="{{ form.bid_increment }}">
+    </label>
+  </div>
+  <label>Photos (PNG/JPG/GIF/WebP, multiple allowed)
+    <input type="file" name="photos" accept="image/*" multiple>
+  </label>
+  {% if photos %}
+  <div class="photo-manage">
+    {% for p in photos %}
+    <div class="photo-item">
+      <img src="{{ url_for('uploaded_file', filename=p.filename) }}" alt="">
+      <label class="small"><input type="checkbox" name="delete_photo" value="{{ p.id }}"> delete</label>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <button class="btn btn-gold btn-lg" type="submit">{{ 'Save changes' if lot else 'Create lot' }}</button>
+</form>
+
+{% endblock %}

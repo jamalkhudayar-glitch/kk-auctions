@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}{{ auction.title }} — K&amp;K Auctions{% endblock %}
+{% block content %}
+
+<div class="auction-head">
+  <div>
+    <h1>{{ auction.title }}</h1>
+    <p class="muted">{{ auction.description }}</p>
+  </div>
+  <div class="auction-timer">
+    {% if state == 'live' %}
+      <div class="pill pill-live">🔴 LIVE</div>
+      <div class="countdown big" data-countdown data-ends="{{ auction.ends_at }}">…</div>
+      <div class="muted small">Soft close: bids in the last {{ auction.soft_close_minutes }} min extend the auction</div>
+    {% elif state == 'upcoming' %}
+      <div class="pill pill-soon">UPCOMING</div>
+      <div class="countdown big" data-countdown data-ends="{{ auction.starts_at }}">…</div>
+    {% else %}
+      <div class="pill pill-ended">ENDED</div>
+    {% endif %}
+  </div>
+</div>
+
+<form class="filters" method="get">
+  <input type="search" name="q" placeholder="Search lots…" value="{{ q }}">
+  <select name="category">
+    <option value="">All categories</option>
+    {% for c in categories %}
+      <option value="{{ c }}" {% if c == category %}selected{% endif %}>{{ c|title }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn btn-gold" type="submit">Filter</button>
+</form>
+
+{% if lots %}
+<div class="lot-grid">
+  {% for lot in lots %}
+  <div class="lot-card">
+    <a href="{{ url_for('lot_detail', lot_id=lot.id) }}">
+      <img src="{{ lot_image(lot) }}" alt="{{ lot.title }}" loading="lazy">
+    </a>
+    <div class="lot-card-body">
+      <div class="lot-no">Lot {{ lot.lot_number }}{% if lot.category %} · {{ lot.category|title }}{% endif %}</div>
+      <a href="{{ url_for('lot_detail', lot_id=lot.id) }}"><h4>{{ lot.title }}</h4></a>
+      <div class="lot-meta">
+        <span class="bid">{{ lot.current_bid_cents|money if lot.current_bid_cents else lot.starting_bid_cents|money }}</span>
+        <span class="muted small">{{ lot.bid_count }} bid{{ 's' if lot.bid_count != 1 }}</span>
+      </div>
+      {% if lot.status != 'active' %}
+        <div class="pill pill-ended">{{ lot.status|replace('_', ' ')|upper }}</div>
+      {% elif state == 'live' %}
+        <div class="countdown small" data-countdown data-ends="{{ auction.ends_at }}">…</div>
+      {% endif %}
+      {% if current_user %}
+      <form method="post" action="{{ url_for('toggle_watch', lot_id=lot.id) }}" class="inline-form">
+        <input type="hidden" name="next" value="{{ request.path }}{{ '?' + request.query_string.decode() if request.query_string }}">
+        <button class="btn btn-sm {% if lot.id in watched %}btn-watched{% else %}btn-outline{% endif %}" type="submit">
+          {{ '★ Watching' if lot.id in watched else '☆ Watch' }}
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty"><p class="muted">No lots match your filters.</p></div>
+{% endif %}
+
+{% endblock %}

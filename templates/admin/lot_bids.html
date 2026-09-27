@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Bids — Lot {{ lot.lot_number }}{% endblock %}
+{% block content %}
+
+<p class="crumb"><a href="{{ url_for('admin_auction_edit', auction_id=lot.auction_id) }}">← {{ lot.auction_title }}</a></p>
+<h1>Lot {{ lot.lot_number }}: {{ lot.title }}</h1>
+<p class="muted">Current bid: <strong>{{ lot.current_bid_cents|money if lot.current_bid_cents else lot.starting_bid_cents|money }}</strong> · {{ bids|length }} bid{{ 's' if bids|length != 1 }} · Status: {{ lot.status }}</p>
+
+{% if bids %}
+<table class="bids">
+  <tr><th>#</th><th>Bidder</th><th>Email</th><th>Phone</th><th>Amount</th><th>Time (UTC)</th></tr>
+  {% for b in bids %}
+  <tr class="{% if loop.first %}top-bid{% endif %}">
+    <td>{{ loop.index }}</td>
+    <td>{{ b.bidder_name }}</td>
+    <td class="muted">{{ b.bidder_email }}</td>
+    <td class="muted">{{ b.bidder_phone or '—' }}</td>
+    <td><strong>{{ b.amount_cents|money }}</strong></td>
+    <td class="muted">{{ b.created_at[:19].replace('T', ' ') }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p class="muted">No bids on this lot yet.</p>
+{% endif %}
+
+{% endblock %}

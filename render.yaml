@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: kk-auctions
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: KK_DB
+        value: /var/kk-data/kk_auctions.db
+      - key: KK_UPLOADS
+        value: /var/kk-data/uploads
+      - key: PYTHON_VERSION
+        value: 3.11.0
+    disk:
+      name: kk-data
+      mountPath: /var/kk-data
+      sizeGB: 1

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — K&amp;K Auctions{% endblock %}
+{% block content %}
+
+<div class="admin-head">
+  <h1>Admin Dashboard</h1>
+  <a class="btn btn-gold" href="{{ url_for('admin_auction_new') }}">+ New auction</a>
+</div>
+
+<table class="bids admin-table">
+  <tr><th>Auction</th><th>Status</th><th>Ends (UTC)</th><th>Lots</th><th>Bids</th><th>Revenue</th><th></th></tr>
+  {% for a in auctions %}
+  <tr>
+    <td><strong>{{ a.title }}</strong></td>
+    <td>
+      {% set s = time_state(a) %}
+      <span class="pill {% if s == 'live' %}pill-live{% elif s == 'upcoming' %}pill-soon{% else %}pill-ended{% endif %}">
+        {{ a.status|upper }} · {{ s|upper }}
+      </span>
+    </td>
+    <td class="muted">{{ a.ends_at[:16].replace('T', ' ') }}</td>
+    <td>{{ a.lot_count }}</td>
+    <td>{{ a.bid_count }}</td>
+    <td>{{ a.revenue_cents|money if a.revenue_cents else '—' }}</td>
+    <td class="actions">
+      <a class="btn btn-sm btn-outline" href="{{ url_for('admin_auction_edit', auction_id=a.id) }}">Edit</a>
+      <a class="btn btn-sm btn-outline" href="{{ url_for('admin_winners', auction_id=a.id) }}">Winners</a>
+      {% if a.status != 'closed' %}
+      <form method="post" action="{{ url_for('admin_auction_close', auction_id=a.id) }}" class="inline-form"
+            onsubmit="return confirm('Close this auction? Lots with bids will be marked SOLD to the high bidder.');">
+        <button class="btn btn-sm btn-danger" type="submit">Close</button>
+      </form>
+      {% endif %}
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="7" class="muted">No auctions yet.</td></tr>
+  {% endfor %}
+</table>
+
+{% endblock %}

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}K&amp;K Auctions{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="{{ url_for('index') }}">
+      <span class="brand-mark">K&amp;K</span>
+      <span class="brand-sub">AUCTIONS</span>
+    </a>
+    <nav class="nav">
+      <a href="{{ url_for('index') }}">Auctions</a>
+      {% if current_user %}
+        <a href="{{ url_for('account') }}">My Account</a>
+        {% if current_user.is_admin %}
+          <a href="{{ url_for('admin_dashboard') }}" class="admin-link">Admin</a>
+        {% endif %}
+        <span class="nav-user">{{ current_user.name }}</span>
+        <a href="{{ url_for('logout') }}">Log out</a>
+      {% else %}
+        <a href="{{ url_for('login') }}">Log in</a>
+        <a href="{{ url_for('register') }}" class="btn btn-gold btn-sm">Register to bid</a>
+      {% endif %}
+    </nav>
+  </div>
+</header>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="wrap flashes">
+    {% for cat, msg in messages %}
+      <div class="flash flash-{{ cat }}">{{ msg }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endwith %}
+
+<main class="wrap">
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <div class="wrap footer-inner">
+    <div>
+      <strong>K&amp;K Auctions</strong> — powered by K&amp;K Bin Cleanup<br>
+      <span class="muted">We buy unwanted cars, catalytic converters, engines, transmissions &amp; rims across Ontario.</span>
+    </div>
+    <div class="footer-contact">
+      📞 <a href="tel:{{ business_phone }}">{{ business_phone }}</a>
+    </div>
+  </div>
+</footer>
+
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

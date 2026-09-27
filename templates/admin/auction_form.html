@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if auction else 'New' }} auction — Admin{% endblock %}
+{% block content %}
+
+<p class="crumb"><a href="{{ url_for('admin_dashboard') }}">← Dashboard</a></p>
+<h1>{{ 'Edit auction' if auction else 'New auction' }}</h1>
+
+<form method="post" class="form-card">
+  <label>Title
+    <input type="text" name="title" required value="{{ form.title }}">
+  </label>
+  <label>Description
+    <textarea name="description" rows="4">{{ form.description }}</textarea>
+  </label>
+  <div class="form-row">
+    <label>Starts at (UTC)
+      <input type="datetime-local" name="starts_at" required value="{{ form.starts_at }}">
+    </label>
+    <label>Ends at (UTC)
+      <input type="datetime-local" name="ends_at" required value="{{ form.ends_at }}">
+    </label>
+  </div>
+  <div class="form-row">
+    <label>Soft-close minutes
+      <input type="number" name="soft_close_minutes" min="0" max="60" value="{{ form.soft_close_minutes }}">
+    </label>
+    <label>Status
+      <select name="status">
+        {% for s in ['draft', 'active', 'closed'] %}
+        <option value="{{ s }}" {% if form.status == s %}selected{% endif %}>{{ s|title }}</option>
+        {% endfor %}
+      </select>
+    </label>
+  </div>
+  <button class="btn btn-gold btn-lg" type="submit">{{ 'Save changes' if auction else 'Create auction' }}</button>
+</form>
+
+{% if auction %}
+<h2>Lots in this auction</h2>
+<p><a class="btn btn-gold" href="{{ url_for('admin_lot_new', auction_id=auction.id) }}">+ Add lot</a></p>
+<table class="bids admin-table">
+  <tr><th>#</th><th>Title</th><th>Category</th><th>Current bid</th><th>Bids</th><th>Status</th><th></th></tr>
+  {% for lot in lots %}
+  <tr>
+    <td>{{ lot.lot_number }}</td>
+    <td>{{ lot.title[:60] }}</td>
+    <td class="muted">{{ lot.category or '—' }}</td>
+    <td>{{ lot.current_bid_cents|money if lot.current_bid_cents else lot.starting_bid_cents|money }}</td>
+    <td>{{ lot.bid_count }}</td>
+    <td>{{ lot.status }}</td>
+    <td class="actions">
+      <a class="btn btn-sm btn-outline" href="{{ url_for('admin_lot_bids', lot_id=lot.id) }}">Bids</a>
+      <a class="btn btn-sm btn-outline" href="{{ url_for('admin_lot_edit', lot_id=lot.id) }}">Edit</a>
+      <form method="post" action="{{ url_for('admin_lot_delete', lot_id=lot.id) }}" class="inline-form"
+            onsubmit="return confirm('Delete this lot and all its bids?');">
+        <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+      </form>
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="7" class="muted">No lots yet.</td></tr>
+  {% endfor %}
+</table>
+{% endif %}
+
+{% endblock %}

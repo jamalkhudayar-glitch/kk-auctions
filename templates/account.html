@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}My Account — K&amp;K Auctions{% endblock %}
+{% block content %}
+
+<h1>My Account</h1>
+<p class="muted">{{ current_user.name }} · {{ current_user.email }}{% if current_user.phone %} · {{ current_user.phone }}{% endif %}</p>
+
+<h2>My bids</h2>
+{% if my_bids %}
+<table class="bids">
+  <tr><th>Lot</th><th>My bid</th><th>Current bid</th><th>Status</th><th></th></tr>
+  {% for b in my_bids %}
+  <tr>
+    <td>{{ b.auction_title }} — Lot {{ b.lot_number }}: {{ b.title[:50] }}</td>
+    <td>{{ b.amount_cents|money }}</td>
+    <td>{{ b.current_bid_cents|money if b.current_bid_cents else '—' }}</td>
+    <td>
+      {% if b.lot_status == 'sold' %}
+        {% if b.current_bidder_id == current_user.id %}
+          <span class="pill pill-live">🏆 WON</span>
+        {% else %}
+          <span class="pill pill-ended">LOST</span>
+        {% endif %}
+      {% elif b.current_bidder_id == current_user.id %}
+        <span class="pill pill-live">WINNING</span>
+      {% else %}
+        <span class="pill pill-outbid">OUTBID</span>
+      {% endif %}
+    </td>
+    <td><a class="btn btn-sm btn-outline" href="{{ url_for('lot_detail', lot_id=b.lot_id) }}">View</a></td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p class="muted">You haven't placed any bids yet.</p>
+{% endif %}
+
+<h2>My watchlist</h2>
+{% if watchlist %}
+<div class="lot-grid">
+  {% for lot in watchlist %}
+  <a class="lot-card" href="{{ url_for('lot_detail', lot_id=lot.id) }}">
+    <img src="{{ lot_image(lot) }}" alt="{{ lot.title }}" loading="lazy">
+    <div class="lot-card-body">
+      <div class="lot-no">Lot {{ lot.lot_number }}</div>
+      <h4>{{ lot.title }}</h4>
+      <div class="lot-meta">
+        <span class="bid">{{ lot.current_bid_cents|money if lot.current_bid_cents else lot.starting_bid_cents|money }}</span>
+        <span class="muted small">{{ lot.bid_count }} bid{{ 's' if lot.bid_count != 1 }}</span>
+      </div>
+      <div class="countdown small" data-countdown data-ends="{{ lot.ends_at }}">…</div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<p class="muted">No watched lots yet. Hit ☆ Watch on any lot to track it here.</p>
+{% endif %}
+
+{% endblock %}

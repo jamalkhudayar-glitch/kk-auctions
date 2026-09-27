@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Lot {{ lot.lot_number }}: {{ lot.title }} — K&amp;K Auctions{% endblock %}
+{% block content %}
+
+<p class="crumb"><a href="{{ url_for('auction_detail', auction_id=lot.auction_id) }}">← {{ lot.auction_title }}</a></p>
+
+<div class="lot-detail">
+  <div class="lot-gallery">
+    <img id="main-photo" src="{{ images[0] }}" alt="{{ lot.title }}">
+    {% if images|length > 1 %}
+    <div class="thumbs">
+      {% for img in images %}
+        <img src="{{ img }}" alt="photo {{ loop.index }}" class="thumb {% if loop.first %}active{% endif %}" data-full="{{ img }}">
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="lot-info">
+    <div class="lot-no">Lot {{ lot.lot_number }}{% if lot.category %} · {{ lot.category|title }}{% endif %}</div>
+    <h1>{{ lot.title }}</h1>
+
+    {% if state == 'live' and lot.status == 'active' %}
+      <div class="pill pill-live">🔴 BIDDING OPEN</div>
+      <div class="countdown big" data-countdown data-ends="{{ lot.ends_at }}">…</div>
+    {% elif lot.status == 'sold' %}
+      <div class="pill pill-ended">SOLD</div>
+    {% elif lot.status == 'no_sale' %}
+      <div class="pill pill-ended">NO SALE</div>
+    {% else %}
+      <div class="pill pill-ended">BIDDING CLOSED</div>
+    {% endif %}
+
+    <div class="bid-box">
+      <div class="current-bid">
+        <span class="muted">Current bid</span>
+        <strong>{{ lot.current_bid_cents|money if lot.current_bid_cents else lot.starting_bid_cents|money }}</strong>
+        <span class="muted small">{{ bid_count }} bid{{ 's' if bid_count != 1 }}</span>
+      </div>
+
+      {% if can_bid %}
+        {% if user_bid and lot.current_bidder_id == user.id %}
+          <div class="flash flash-ok">🎉 You're the high bidder!</div>
+        {% elif user_bid %}
+          <div class="flash flash-warn">You've been outbid — bid again to take the lead.</div>
+        {% endif %}
+        <form method="post" action="{{ url_for('place_bid', lot_id=lot.id) }}" class="bid-form">
+          <label>Your max bid (min {{ min_bid|money }})
+            <input type="number" name="amount" step="0.01" min="{{ '%.2f'|format(min_bid / 100) }}" value="{{ '%.2f'|format(min_bid / 100) }}" required>
+          </label>
+          <button class="btn btn-gold btn-lg" type="submit">Place bid</button>
+        </form>
+        <p class="muted small">Bids in the last {{ lot.soft_close_minutes }} minutes extend the auction by {{ lot.soft_close_minutes }} minutes.</p>
+      {% elif not user %}
+        <p><a class="btn btn-gold" href="{{ url_for('login', next=request.path) }}">Log in to bid</a>
+        <a class="btn btn-outline" href="{{ url_for('register') }}">Register</a></p>
+      {% endif %}
+
+      {% if user %}
+      <form method="post" action="{{ url_for('toggle_watch', lot_id=lot.id) }}" class="inline-form">
+        <input type="hidden" name="next" value="{{ request.path }}">
+        <button class="btn {% if watched %}btn-watched{% else %}btn-outline{% endif %}" type="submit">
+          {{ '★ Watching' if watched else '☆ Watch this lot' }}
+        </button>
+      </form>
+      {% endif %}
+    </div>
+
+    <table class="specs">
+      <tr><th>Lot number</th><td>{{ lot.lot_number }}</td></tr>
+      <tr><th>Category</th><td>{{ lot.category|title if lot.category else '—' }}</td></tr>
+      <tr><th>Starting bid</th><td>{{ lot.starting_bid_cents|money }}</td></tr>
+      <tr><th>Bid increment</th><td>{{ lot.bid_increment_cents|money }}</td></tr>
+      <tr><th>Auction ends</th><td>{{ lot.ends_at[:16].replace('T', ' ') }} UTC</td></tr>
+    </table>
+
+    <h3>Description</h3>
+    <p class="desc">{{ lot.description or 'No description provided.' }}</p>
+    <p class="muted small">📍 Pickup in the Greater Toronto Area. All lots sold as-is, where-is.
+       Questions? Call/text <a href="tel:{{ business_phone }}">{{ business_phone }}</a>.</p>
+  </div>
+</div>
+
+<h2>Bid history ({{ bid_count }})</h2>
+{% if bids %}
+<table class="bids">
+  <tr><th>Bidder</th><th>Amount</th><th>Time (UTC)</th></tr>
+  {% for b in bids %}
+  <tr class="{% if loop.first %}top-bid{% endif %}">
+    <td>{{ b.bidder_name }}{% if user and b.user_id == user.id %} (you){% endif %}</td>
+    <td><strong>{{ b.amount_cents|money }}</strong></td>
+    <td class="muted">{{ b.created_at[:19].replace('T', ' ') }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p class="muted">No bids yet — be the first!</p>
+{% endif %}
+
+<script>
+document.querySelectorAll('.thumb').forEach(t => {
+  t.addEventListener('click', () => {
+    document.getElementById('main-photo').src = t.dataset.full;
+    document.querySelectorAll('.thumb').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+  });
+});
+</script>
+
+{% endblock %}

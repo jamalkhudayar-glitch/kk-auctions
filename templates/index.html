@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}K&amp;K Auctions — Timed Online Auctions in Ontario{% endblock %}
+{% block content %}
+
+<section class="hero">
+  <h1>Bid on cars, equipment &amp; parts</h1>
+  <p>Timed online auctions across Ontario. Register free, place your bid, win the lot.</p>
+  {% if not current_user %}
+    <a href="{{ url_for('register') }}" class="btn btn-gold btn-lg">Register to bid — it's free</a>
+  {% endif %}
+</section>
+
+{% if live %}
+<h2>🔴 Live now</h2>
+<div class="auction-list">
+  {% for a in live %}
+  <a class="auction-card" href="{{ url_for('auction_detail', auction_id=a.id) }}">
+    <h3>{{ a.title }}</h3>
+    <p class="muted">{{ a.description[:140] }}{% if a.description|length > 140 %}…{% endif %}</p>
+    <div class="countdown" data-countdown data-ends="{{ a.ends_at }}">Ends in …</div>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if upcoming %}
+<h2>📅 Upcoming auctions</h2>
+<div class="auction-list">
+  {% for a in upcoming %}
+  <a class="auction-card" href="{{ url_for('auction_detail', auction_id=a.id) }}">
+    <h3>{{ a.title }}</h3>
+    <p class="muted">Opens {{ a.starts_at[:16].replace('T', ' ') }} UTC</p>
+    <div class="countdown" data-countdown data-ends="{{ a.starts_at }}">Starts in …</div>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if not live and not upcoming %}
+<div class="empty">
+  <h2>No auctions running right now</h2>
+  <p class="muted">Check back soon — new auctions are added regularly. Questions? Call <a href="tel:{{ business_phone }}">{{ business_phone }}</a>.</p>
+</div>
+{% endif %}
+
+{% if featured %}
+<h2>⭐ Featured lots</h2>
+<div class="lot-grid">
+  {% for lot in featured %}
+  <a class="lot-card" href="{{ url_for('lot_detail', lot_id=lot.id) }}">
+    <img src="{{ lot_image(lot) }}" alt="{{ lot.title }}" loading="lazy">
+    <div class="lot-card-body">
+      <div class="lot-no">Lot {{ lot.lot_number }}</div>
+      <h4>{{ lot.title }}</h4>
+      <div class="lot-meta">
+        <span class="bid">{{ lot.current_bid_cents|money if lot.current_bid_cents else lot.starting_bid_cents|money }}</span>
+        <span class="muted small">{{ 'current bid' if lot.current_bid_cents else 'starting bid' }}</span>
+      </div>
+      <div class="countdown small" data-countdown data-ends="{{ lot.ends_at }}">…</div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+
+<section class="how">
+  <h2>How it works</h2>
+  <ol class="steps">
+    <li><strong>Register</strong> — free account, no deposit needed.</li>
+    <li><strong>Browse &amp; watch</strong> — find lots you want and add them to your watchlist.</li>
+    <li><strong>Bid</strong> — auctions are timed. If a bid lands in the final minutes, the auction extends (soft close) so everyone gets a fair shot.</li>
+    <li><strong>Win &amp; pick up</strong> — winners are notified; pickup in the Greater Toronto Area.</li>
+  </ol>
+  <p class="muted">All lots sold as-is, where-is. Questions? Call/text <a href="tel:{{ business_phone }}">{{ business_phone }}</a>.</p>
+</section>
+
+{% endblock %}

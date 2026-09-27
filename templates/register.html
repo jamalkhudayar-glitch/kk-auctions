@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Register — K&amp;K Auctions{% endblock %}
+{% block content %}
+<div class="auth-box">
+  <h1>Create your account</h1>
+  <p class="muted">Free to register. Bid on cars, equipment &amp; parts across Ontario.</p>
+  <form method="post">
+    <label>Full name
+      <input type="text" name="name" required minlength="2" autocomplete="name">
+    </label>
+    <label>Email
+      <input type="email" name="email" required autocomplete="email">
+    </label>
+    <label>Phone
+      <input type="tel" name="phone" autocomplete="tel" placeholder="e.g. 6475551234">
+    </label>
+    <label>Password (min 8 characters)
+      <input type="password" name="password" required minlength="8" autocomplete="new-password">
+    </label>
+    <button class="btn btn-gold btn-lg" type="submit">Register</button>
+  </form>
+  <p class="muted">Already have an account? <a href="{{ url_for('login') }}">Log in</a></p>
+</div>
+{% endblock %}

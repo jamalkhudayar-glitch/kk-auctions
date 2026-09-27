@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Winner report — {{ auction.title }}{% endblock %}
+{% block content %}
+
+<p class="crumb"><a href="{{ url_for('admin_dashboard') }}">← Dashboard</a></p>
+<h1>Winner report</h1>
+<p class="muted">{{ auction.title }}</p>
+
+<table class="bids admin-table">
+  <tr><th>Lot #</th><th>Lot</th><th>Result</th><th>Winner</th><th>Email</th><th>Phone</th><th>Winning bid</th></tr>
+  {% for lot in lots %}
+  <tr>
+    <td>{{ lot.lot_number }}</td>
+    <td>{{ lot.title[:60] }}</td>
+    <td>
+      {% if lot.status == 'sold' %}<span class="pill pill-live">SOLD</span>
+      {% elif lot.status == 'no_sale' %}<span class="pill pill-ended">NO SALE</span>
+      {% else %}<span class="pill pill-soon">{{ lot.status|upper }}</span>{% endif %}
+    </td>
+    <td>{{ lot.winner_name or '—' }}</td>
+    <td class="muted">{{ lot.winner_email or '—' }}</td>
+    <td class="muted">{{ lot.winner_phone or '—' }}</td>
+    <td><strong>{{ lot.current_bid_cents|money if lot.current_bid_cents else '—' }}</strong></td>
+  </tr>
+  {% endfor %}
+</table>
+
+<p><button class="btn btn-outline" onclick="window.print()">Print report</button></p>
+
+{% endblock %}

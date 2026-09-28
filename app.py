@@ -4,7 +4,13 @@ K&K Auctions — timed online auction site for K&K Bin Cleanup.
 Stack: Flask + sqlite3 (stdlib) + Werkzeug. No ORM, no build step.
 """
 import os
+import csv
+import io
+import re
+import shutil
 import sqlite3
+import tempfile
+import zipfile
 import json
 import urllib.parse
 import urllib.request
@@ -994,35 +1000,179 @@ def admin_winners(auction_id):
 
 
 # ------------------------------------------------------------ admin: lots
-def _save_uploads(files):
+def _store_image(src_path, orig_filename):
+    """Copy an image into UPLOAD_DIR, shrinking it. Returns stored name or None."""
+    ext = orig_filename.rsplit(".", 1)[-1].lower() if "." in orig_filename else ""
+    if ext not in ALLOWED_EXT:
+        return None
     os.makedirs(UPLOAD_DIR, exist_ok=True)
+    name = f"{utcnow().strftime('%Y%m%d%H%M%S%f')}_{secure_filename(orig_filename)}"
+    dest = os.path.join(UPLOAD_DIR, name)
+    shutil.copyfile(src_path, dest)
+    # Shrink phone photos so uploads stay fast and small.
+    if _PIL_OK and ext in {"jpg", "jpeg", "png", "webp"}:
+        try:
+            im = Image.open(dest)
+            im = ImageOps.exif_transpose(im)
+            im.thumbnail((1600, 1600))
+            if im.mode in ("RGBA", "P"):
+                im = im.convert("RGB")
+            im.save(dest, "JPEG", quality=82, optimize=True)
+            base = dest.rsplit(".", 1)[0] + ".jpg"
+            if base != dest:
+                os.replace(dest, base)
+                name = os.path.basename(base)
+        except Exception:
+            pass
+    return name
+
+
+def _save_uploads(files):
     saved = []
     for f in files:
         if not f or not f.filename:
             continue
-        ext = f.filename.rsplit(".", 1)[-1].lower() if "." in f.filename else ""
-        if ext not in ALLOWED_EXT:
-            continue
-        name = f"{utcnow().strftime('%Y%m%d%H%M%S%f')}_{secure_filename(f.filename)}"
-        dest = os.path.join(UPLOAD_DIR, name)
-        f.save(dest)
-        # Shrink phone photos so uploads stay fast and small.
-        if _PIL_OK and ext in {"jpg", "jpeg", "png", "webp"}:
+        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".upload")
+        try:
+            f.save(tmp.name)
+            tmp.close()
+            name = _store_image(tmp.name, f.filename)
+            if name:
+                saved.append(name)
+        finally:
             try:
-                im = Image.open(dest)
-                im = ImageOps.exif_transpose(im)
-                im.thumbnail((1600, 1600))
-                if im.mode in ("RGBA", "P"):
-                    im = im.convert("RGB")
-                im.save(dest, "JPEG", quality=82, optimize=True)
-                base = dest.rsplit(".", 1)[0] + ".jpg"
-                if base != dest:
-                    os.replace(dest, base)
-                    name = os.path.basename(base)
-            except Exception:
+                os.unlink(tmp.name)
+            except OSError:
                 pass
-        saved.append(name)
     return saved
+
+
+@app.route("/admin/lots/sample-csv")
+@admin_required
+def admin_sample_csv():
+    """Downloadable CSV template for bulk lot import."""
+    from flask import Response
+    sample = ("lot_number,title,description,category,starting_bid,bid_increment\n"
+              '1,2012 Honda Civic EX,"Sedan, 180k km, runs well",vehicles,500,25\n'
+              '2,Catalytic converter - Honda,"OEM, code 5K12",converters,40,5\n')
+    return Response(sample, mimetype="text/csv",
+                    headers={"Content-Disposition": "attachment; filename=lots_template.csv"})
+
+
+@app.route("/admin/auction/<int:auction_id>/lots/import", methods=["GET", "POST"])
+@admin_required
+def admin_lot_import(auction_id):
+    db = get_db()
+    auction = db.execute("SELECT * FROM auctions WHERE id = ?", (auction_id,)).fetchone()
+    if not auction:
+        abort(404)
+    if request.method == "POST":
+        f = request.files.get("csv_file")
+        if not f or not f.filename:
+            flash("Choose a CSV file first.", "error")
+            return redirect(url_for("admin_lot_import", auction_id=auction_id))
+        try:
+            text = f.read().decode("utf-8-sig")
+        except Exception:
+            flash("Could not read the file — make sure it is a CSV.", "error")
+            return redirect(url_for("admin_lot_import", auction_id=auction_id))
+        reader = csv.DictReader(io.StringIO(text))
+        created, skipped, errors = 0, 0, []
+        existing = {r["lot_number"] for r in db.execute(
+            "SELECT lot_number FROM lots WHERE auction_id = ?", (auction_id,))}
+        for i, row in enumerate(reader, start=2):
+            try:
+                lot_number = int((row.get("lot_number") or "0").strip())
+            except ValueError:
+                lot_number = 0
+            title = (row.get("title") or "").strip()
+            if lot_number < 1 or not title:
+                errors.append(f"Row {i}: needs a lot_number (1+) and a title.")
+                continue
+            if lot_number in existing:
+                skipped += 1
+                continue
+            description = (row.get("description") or "").strip()
+            category = (row.get("category") or "").strip().lower() or None
+            try:
+                start_cents = int(round(float(row.get("starting_bid") or 0) * 100))
+                incr_cents = int(round(float(row.get("bid_increment") or 5) * 100))
+            except ValueError:
+                errors.append(f"Row {i}: starting_bid / bid_increment must be numbers.")
+                continue
+            if start_cents < 0 or incr_cents < 1:
+                errors.append(f"Row {i}: starting bid must be >= 0 and increment >= 0.01.")
+                continue
+            db.execute(
+                "INSERT INTO lots (auction_id, lot_number, title, description, category,"
+                " starting_bid_cents, bid_increment_cents, status, created_at)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, 'active', ?)",
+                (auction_id, lot_number, title, description, category,
+                 start_cents, incr_cents, utcnow_iso()))
+            existing.add(lot_number)
+            created += 1
+        db.commit()
+        flash(f"Imported {created} lots." + (f" Skipped {skipped} duplicates." if skipped else ""), "ok")
+        for e in errors[:5]:
+            flash(e, "error")
+        if len(errors) > 5:
+            flash(f"...and {len(errors) - 5} more rows had problems.", "error")
+        return redirect(url_for("admin_auction_edit", auction_id=auction_id))
+    return render_template("admin/lot_import.html", auction=auction)
+
+
+@app.route("/admin/auction/<int:auction_id>/lots/import-photos", methods=["POST"])
+@admin_required
+def admin_lot_import_photos(auction_id):
+    """ZIP upload: photo filenames like 12_1.jpg attach to lot number 12."""
+    db = get_db()
+    auction = db.execute("SELECT * FROM auctions WHERE id = ?", (auction_id,)).fetchone()
+    if not auction:
+        abort(404)
+    f = request.files.get("zip_file")
+    if not f or not f.filename:
+        flash("Choose a ZIP file first.", "error")
+        return redirect(url_for("admin_lot_import", auction_id=auction_id))
+    lot_ids = {r["lot_number"]: r["id"] for r in db.execute(
+        "SELECT id, lot_number FROM lots WHERE auction_id = ?", (auction_id,))}
+    attached, skipped = 0, 0
+    tmpdir = tempfile.mkdtemp(prefix="kkzip_")
+    try:
+        zpath = os.path.join(tmpdir, "upload.zip")
+        f.save(zpath)
+        with zipfile.ZipFile(zpath) as z:
+            for info in z.infolist():
+                if info.is_dir():
+                    continue
+                base = os.path.basename(info.filename)
+                m = re.match(r"^(\d+)[-_].*\.(png|jpe?g|gif|webp)$", base, re.I)
+                if not m:
+                    skipped += 1
+                    continue
+                lot_number = int(m.group(1))
+                lot_id = lot_ids.get(lot_number)
+                if not lot_id:
+                    skipped += 1
+                    continue
+                src_path = os.path.join(tmpdir, base)
+                with z.open(info) as zi, open(src_path, "wb") as out:
+                    shutil.copyfileobj(zi, out)
+                name = _store_image(src_path, base)
+                if name:
+                    db.execute(
+                        "INSERT INTO lot_photos (lot_id, filename, created_at)"
+                        " VALUES (?, ?, ?)", (lot_id, name, utcnow_iso()))
+                    attached += 1
+                else:
+                    skipped += 1
+        db.commit()
+    except zipfile.BadZipFile:
+        flash("That file is not a valid ZIP.", "error")
+        return redirect(url_for("admin_lot_import", auction_id=auction_id))
+    finally:
+        shutil.rmtree(tmpdir, ignore_errors=True)
+    flash(f"Attached {attached} photos." + (f" Skipped {skipped} files." if skipped else ""), "ok")
+    return redirect(url_for("admin_auction_edit", auction_id=auction_id))
 
 
 @app.route("/admin/auction/<int:auction_id>/lots/new", methods=["GET", "POST"])

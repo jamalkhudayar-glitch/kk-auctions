@@ -584,6 +584,29 @@ def account():
                            watchlist=watchlist, lot_image=lot_image)
 
 
+@app.route("/account/password", methods=["GET", "POST"])
+@login_required
+def change_password():
+    user = current_user()
+    if request.method == "POST":
+        current = request.form.get("current_password", "")
+        new = request.form.get("new_password", "")
+        confirm = request.form.get("confirm_password", "")
+        if not check_password_hash(user["password_hash"], current):
+            flash("Your current password is incorrect.", "error")
+        elif len(new) < 8:
+            flash("New password must be at least 8 characters.", "error")
+        elif new != confirm:
+            flash("New passwords do not match.", "error")
+        else:
+            get_db().execute("UPDATE users SET password_hash = ? WHERE id = ?",
+                             (generate_password_hash(new), user["id"]))
+            get_db().commit()
+            flash("Password changed successfully.", "ok")
+            return redirect(url_for("account"))
+    return render_template("account_password.html")
+
+
 # ------------------------------------------------------------------ admin
 @app.route("/admin")
 @admin_required

@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Payment method — K&amp;K Auctions{% endblock %}
+{% block content %}
+<div class="auth-box">
+  <h1>Card on file</h1>
+  {% if card_last4 %}
+    <p class="muted">Current card: <strong>{{ card_brand|capitalize }} •••• {{ card_last4 }}</strong></p>
+    <p class="muted">Add a new card below to replace it.</p>
+  {% else %}
+    <p class="muted">Winners are charged automatically when an auction closes — just like HiBid. Your card details go straight to Stripe; we never see or store them.</p>
+  {% endif %}
+  <form id="card-form">
+    <label>Card details
+      <div id="card-element" class="stripe-card"></div>
+    </label>
+    <div id="card-errors" class="flash flash-error" role="alert" style="display:none"></div>
+    <button class="btn btn-gold btn-lg" id="save-btn" type="submit">Save card</button>
+  </form>
+  <p class="muted small">Secured by Stripe. <a href="{{ next_url }}">Skip for now →</a></p>
+</div>
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+(function () {
+  const stripe = Stripe({{ publishable_key|tojson }});
+  const elements = stripe.elements();
+  const card = elements.create("card", { hidePostalCode: false });
+  card.mount("#card-element");
+  const form = document.getElementById("card-form");
+  const btn = document.getElementById("save-btn");
+  const errBox = document.getElementById("card-errors");
+  function showError(msg) {
+    errBox.textContent = msg;
+    errBox.style.display = "block";
+  }
+  card.on("change", (e) => { if (e.error) showError(e.error.message); else errBox.style.display = "none"; });
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    btn.disabled = true;
+    btn.textContent = "Saving…";
+    try {
+      const r = await fetch({{ url_for('payment_method_intent')|tojson }});
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || "Could not start card setup.");
+      const result = await stripe.confirmCardSetup(data.client_secret, {
+        payment_method: { card: card }
+      });
+      if (result.error) throw new Error(result.error.message);
+      const c = await fetch({{ url_for('payment_method_confirm')|tojson }}, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ payment_method_id: result.setupIntent.payment_method })
+      });
+      const saved = await c.json();
+      if (!c.ok) throw new Error(saved.error || "Could not save card.");
+      window.location.href = {{ next_url|tojson }};
+    } catch (err) {
+      showError(err.message);
+      btn.disabled = false;
+      btn.textContent = "Save card";
+    }
+  });
+})();
+</script>
+{% endblock %}

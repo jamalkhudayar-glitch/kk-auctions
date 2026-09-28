@@ -7,7 +7,7 @@
 <p class="muted">{{ auction.title }}</p>
 
 <table class="bids admin-table">
-  <tr><th>Lot #</th><th>Lot</th><th>Result</th><th>Winner</th><th>Email</th><th>Phone</th><th>Winning bid</th></tr>
+  <tr><th>Lot #</th><th>Lot</th><th>Result</th><th>Winner</th><th>Email</th><th>Phone</th><th>Winning bid</th>{% if stripe_configured %}<th>Payment</th>{% endif %}</tr>
   {% for lot in lots %}
   <tr>
     <td>{{ lot.lot_number }}</td>
@@ -21,6 +21,18 @@
     <td class="muted">{{ lot.winner_email or '—' }}</td>
     <td class="muted">{{ lot.winner_phone or '—' }}</td>
     <td><strong>{{ lot.current_bid_cents|money if lot.current_bid_cents else '—' }}</strong></td>
+    {% if stripe_configured %}
+    <td>
+      {% set pay = payments.get(lot.current_bidder_id) %}
+      {% if lot.status == 'sold' and pay %}
+        {% if pay.status == 'succeeded' %}<span class="pill pill-live">PAID</span>
+        {% else %}<span class="pill pill-outbid">{{ pay.status|upper }}</span>
+          <div class="muted small">{{ pay.error_message or '' }}</div>{% endif %}
+      {% elif lot.status == 'sold' %}
+        <span class="muted">—</span>
+      {% else %}—{% endif %}
+    </td>
+    {% endif %}
   </tr>
   {% endfor %}
 </table>

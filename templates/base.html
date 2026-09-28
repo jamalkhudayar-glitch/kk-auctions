@@ -4,14 +4,20 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}K&amp;K Auctions{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 <header class="site-header">
   <div class="wrap header-inner">
     <a class="brand" href="{{ url_for('index') }}">
-      <span class="brand-mark">K&amp;K</span>
-      <span class="brand-sub">AUCTIONS</span>
+      <span class="brand-badge">K&amp;K</span>
+      <span class="brand-text">
+        <span class="brand-mark">K<em>&amp;</em>K</span>
+        <span class="brand-sub">AUCTIONS</span>
+      </span>
     </a>
     <nav class="nav">
       <a href="{{ url_for('index') }}">Auctions</a>
@@ -26,6 +32,7 @@
         <a href="{{ url_for('login') }}">Log in</a>
         <a href="{{ url_for('register') }}" class="btn btn-gold btn-sm">Register to bid</a>
       {% endif %}
+      <a class="nav-phone" href="tel:{{ business_phone }}">📞 {{ business_phone }}</a>
     </nav>
   </div>
 </header>
@@ -45,14 +52,35 @@
 </main>
 
 <footer class="site-footer">
-  <div class="wrap footer-inner">
-    <div>
-      <strong>K&amp;K Auctions</strong> — powered by K&amp;K Bin Cleanup<br>
-      <span class="muted">We buy unwanted cars, catalytic converters, engines, transmissions &amp; rims across Ontario.</span>
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a class="brand" href="{{ url_for('index') }}">
+          <span class="brand-badge">K&amp;K</span>
+          <span class="brand-text">
+            <span class="brand-mark">K<em>&amp;</em>K</span>
+            <span class="brand-sub">AUCTIONS</span>
+          </span>
+        </a>
+        <p>Timed online auctions across Ontario — cars, equipment &amp; parts.<br>Powered by K&amp;K Bin Cleanup. We buy unwanted cars, catalytic converters, engines, transmissions &amp; rims.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Auctions</h4>
+        <a href="{{ url_for('index') }}">Current auctions</a>
+        <a href="{{ url_for('register') }}">Register to bid</a>
+        <a href="{{ url_for('login') }}">Log in</a>
+        <a href="{{ url_for('terms') }}">Terms &amp; Conditions</a>
+      </div>
+      <div class="footer-col">
+        <h4>Contact</h4>
+        <a href="tel:{{ business_phone }}">📞 {{ business_phone }}</a>
+        <a href="{{ url_for('index') }}">Serving Ontario, Canada</a>
+        <a href="{{ url_for('index') }}">Pickup: Greater Toronto Area</a>
+      </div>
     </div>
-    <div class="footer-contact">
-      📞 <a href="tel:{{ business_phone }}">{{ business_phone }}</a><br>
-      <a href="{{ url_for('terms') }}">Terms &amp; Conditions</a>
+    <div class="footer-bottom">
+      <span>© 2026 K&amp;K Auctions, operated by KK Auto Shipping Inc.</span>
+      <span>All lots sold as-is, where-is.</span>
     </div>
   </div>
 </footer>

@@ -18,6 +18,7 @@
     {% else %}
       <div class="pill pill-ended">ENDED</div>
     {% endif %}
+    {% if auction.buyers_premium_pct %}<div class="muted small">Buyer's premium: {{ auction.buyers_premium_pct }}%</div>{% endif %}
   </div>
 </div>
 

@@ -136,6 +136,7 @@ CREATE TABLE IF NOT EXISTS auctions (
     ends_at TEXT NOT NULL,
     soft_close_minutes INTEGER NOT NULL DEFAULT 5,
     status TEXT NOT NULL DEFAULT 'draft',
+    buyers_premium_pct REAL NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS lots (
@@ -201,6 +202,10 @@ def migrate_db(db):
     ):
         if name not in cols:
             db.execute(f"ALTER TABLE users ADD COLUMN {name} {ddl}")
+    acols = {r["name"] for r in
+             db.execute("PRAGMA table_info(auctions)").fetchall()}
+    if "buyers_premium_pct" not in acols:
+        db.execute("ALTER TABLE auctions ADD COLUMN buyers_premium_pct REAL NOT NULL DEFAULT 0")
     db.commit()
 
 
@@ -598,6 +603,11 @@ def uploaded_file(filename):
     return send_from_directory(UPLOAD_DIR, filename)
 
 
+@app.route("/terms")
+def terms():
+    return render_template("terms.html")
+
+
 # ------------------------------------------------------------------ auth
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -615,6 +625,8 @@ def register():
             errors.append("Please enter a valid email address.")
         if len(password) < 8:
             errors.append("Password must be at least 8 characters.")
+        if not request.form.get("agree_terms"):
+            errors.append("You must agree to the Terms & Conditions to register.")
         db = get_db()
         if db.execute("SELECT 1 FROM users WHERE email = ?",
                       (email,)).fetchone():
@@ -851,6 +863,10 @@ def _auction_form(auction):
             soft = max(0, int(request.form.get("soft_close_minutes", 5)))
         except ValueError:
             soft = 5
+        try:
+            premium = max(0.0, min(100.0, float(request.form.get("buyers_premium_pct", 0) or 0)))
+        except ValueError:
+            premium = 0.0
         status = request.form.get("status", "draft")
         if status not in ("draft", "active", "closed"):
             status = "draft"
@@ -868,17 +884,18 @@ def _auction_form(auction):
             if auction:
                 db.execute(
                     "UPDATE auctions SET title=?, description=?, starts_at=?,"
-                    " ends_at=?, soft_close_minutes=?, status=? WHERE id=?",
+                    " ends_at=?, soft_close_minutes=?, status=?,"
+                    " buyers_premium_pct=? WHERE id=?",
                     (title, description, starts_at, ends_at, soft, status,
-                     auction["id"]))
+                     premium, auction["id"]))
                 flash("Auction updated.", "ok")
             else:
                 cur = db.execute(
                     "INSERT INTO auctions (title, description, starts_at, ends_at,"
-                    " soft_close_minutes, status, created_at)"
-                    " VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    " soft_close_minutes, status, buyers_premium_pct, created_at)"
+                    " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                     (title, description, starts_at, ends_at, soft, status,
-                     utcnow_iso()))
+                     premium, utcnow_iso()))
                 auction_id = cur.lastrowid
                 flash("Auction created.", "ok")
                 db.commit()
@@ -892,6 +909,7 @@ def _auction_form(auction):
         "ends_at": _dt_local(auction["ends_at"]) if auction else "",
         "soft_close_minutes": auction["soft_close_minutes"] if auction else 5,
         "status": auction["status"] if auction else "draft",
+        "buyers_premium_pct": auction["buyers_premium_pct"] if auction and "buyers_premium_pct" in auction.keys() else 0,
     }
     lots = []
     if auction:

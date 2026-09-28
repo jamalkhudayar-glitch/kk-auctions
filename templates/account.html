@@ -40,7 +40,9 @@
 <div class="lot-grid">
   {% for lot in watchlist %}
   <a class="lot-card" href="{{ url_for('lot_detail', lot_id=lot.id) }}">
-    <img src="{{ lot_image(lot) }}" alt="{{ lot.title }}" loading="lazy">
+    <span class="lot-img">
+      <img src="{{ lot_image(lot) }}" alt="{{ lot.title }}" loading="lazy">
+    </span>
     <div class="lot-card-body">
       <div class="lot-no">Lot {{ lot.lot_number }}</div>
       <h4>{{ lot.title }}</h4>

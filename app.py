@@ -19,7 +19,7 @@ from flask import (
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 try:
-    from PIL import Image
+    from PIL import Image, ImageOps
     _PIL_OK = True
 except Exception:
     _PIL_OK = False
@@ -582,6 +582,11 @@ def toggle_watch(lot_id):
     return redirect(request.form.get("next") or url_for("lot_detail", lot_id=lot_id))
 
 
+@app.route("/healthz")
+def healthz():
+    return {"ok": True, "version": "2026.09.28-photo-fix-2", "pil": _PIL_OK}
+
+
 @app.route("/uploads/<path:filename>")
 def uploaded_file(filename):
     return send_from_directory(UPLOAD_DIR, filename)
@@ -1005,7 +1010,7 @@ def _save_uploads(files):
         if _PIL_OK and ext in {"jpg", "jpeg", "png", "webp"}:
             try:
                 im = Image.open(dest)
-                im = Image.Image.transpose(im, Image.Transpose.EXIF) if hasattr(Image, "Transpose") else im
+                im = ImageOps.exif_transpose(im)
                 im.thumbnail((1600, 1600))
                 if im.mode in ("RGBA", "P"):
                     im = im.convert("RGB")

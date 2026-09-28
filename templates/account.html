@@ -3,7 +3,7 @@
 {% block content %}
 
 <h1>My Account</h1>
-<p class="muted">{{ current_user.name }} · {{ current_user.email }}{% if current_user.phone %} · {{ current_user.phone }}{% endif %}</p>
+<p class="muted">{{ current_user.name }} · {{ current_user.email }}{% if current_user.phone %} · {{ current_user.phone }}{% endif %} · <a href="{{ url_for('change_password') }}">Change password</a></p>
 
 <h2>My bids</h2>
 {% if my_bids %}

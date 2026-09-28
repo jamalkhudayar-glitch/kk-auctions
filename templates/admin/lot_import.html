@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Bulk import lots — {{ auction.title }}{% endblock %}
+{% block content %}
+
+<p class="crumb"><a href="{{ url_for('admin_auction_edit', auction_id=auction.id) }}">← {{ auction.title }}</a></p>
+<h1>Bulk import lots</h1>
+<p class="muted">Add hundreds of lots in two steps: first the spreadsheet, then the photos.</p>
+
+<h2>Step 1 — Upload the spreadsheet (CSV)</h2>
+<form method="post" enctype="multipart/form-data" class="form-card">
+  <div class="form-row">
+    <label>CSV file
+      <input type="file" name="csv_file" accept=".csv" required>
+    </label>
+  </div>
+  <button class="btn btn-gold" type="submit">Import lots</button>
+  <a class="btn btn-outline" href="{{ url_for('admin_sample_csv') }}">Download template</a>
+</form>
+<p class="muted">Columns: <code>lot_number, title, description, category, starting_bid, bid_increment</code>.
+Rows with a missing title or lot number are skipped. Existing lot numbers are not overwritten.</p>
+
+<h2>Step 2 — Upload the photos (ZIP)</h2>
+<form method="post" enctype="multipart/form-data" class="form-card"
+      action="{{ url_for('admin_lot_import_photos', auction_id=auction.id) }}">
+  <div class="form-row">
+    <label>ZIP file
+      <input type="file" name="zip_file" accept=".zip" required>
+    </label>
+  </div>
+  <button class="btn btn-gold" type="submit">Attach photos</button>
+</form>
+<p class="muted">Name each photo <code>&lt;lot_number&gt;_&lt;photo_number&gt;.jpg</code> —
+e.g. <code>12_1.jpg</code>, <code>12_2.jpg</code> attach to lot 12.
+Photos are shrunk automatically so the upload stays fast.</p>
+
+{% endblock %}

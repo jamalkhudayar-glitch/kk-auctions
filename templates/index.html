@@ -1,77 +1,168 @@
 {% extends "base.html" %}
 {% block title %}K&amp;K Auctions — Timed Online Auctions in Ontario{% endblock %}
 {% block content %}
+{% set months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'] %}
 
-<section class="hero">
-  <h1>Bid on cars, equipment &amp; parts</h1>
-  <p>Timed online auctions across Ontario. Register free, place your bid, win the lot.</p>
-  {% if not current_user %}
-    <a href="{{ url_for('register') }}" class="btn btn-gold btn-lg">Register to bid — it's free</a>
-  {% endif %}
+<section class="hero full-bleed">
+  <div class="wrap">
+    <span class="hero-eyebrow">Welcome to K&amp;K Auctions</span>
+    <h1>Bid on cars, <span class="hl">equipment</span> &amp; parts</h1>
+    <p>Timed online auctions across Ontario. Register free, place your bid, win the lot — fair soft-close bidding on every auction.</p>
+    {% if live %}
+    <form class="hero-search" action="{{ url_for('auction_detail', auction_id=live[0].id) }}" method="get" role="search">
+      <input type="search" name="q" placeholder="Search lots — e.g. Honda Civic, rims, engine…" aria-label="Search lots">
+      <button class="btn btn-gold" type="submit">Search</button>
+    </form>
+    {% else %}
+    <div class="hero-cta-row">
+      {% if not current_user %}
+      <a href="{{ url_for('register') }}" class="btn btn-gold btn-lg">Register to bid — it's free</a>
+      {% endif %}
+      <a href="#auctions" class="btn btn-outline btn-lg">View schedule</a>
+    </div>
+    {% endif %}
+    <div class="hero-badges">
+      <div class="hero-badge"><strong>100%</strong><span>Online bidding</span></div>
+      <div class="hero-badge"><strong>$0</strong><span>Registration fee</span></div>
+      <div class="hero-badge"><strong>GTA</strong><span>Local pickup</span></div>
+    </div>
+  </div>
 </section>
 
-{% if live %}
-<h2>🔴 Live now</h2>
-<div class="auction-list">
-  {% for a in live %}
-  <a class="auction-card" href="{{ url_for('auction_detail', auction_id=a.id) }}">
-    <h3>{{ a.title }}</h3>
-    <p class="muted">{{ a.description[:140] }}{% if a.description|length > 140 %}…{% endif %}</p>
-    <div class="countdown" data-countdown data-ends="{{ a.ends_at }}">Ends in …</div>
-  </a>
-  {% endfor %}
-</div>
-{% endif %}
+<section class="section" id="auctions">
+  <div class="wrap">
+    <h2 class="section-title">Current &amp; Upcoming Auctions</h2>
+    <p class="section-sub">Timed online auctions — bid from anywhere in Ontario. New auctions added regularly.</p>
+    {% if live or upcoming %}
+    <div class="auction-list">
+      {% for a in live %}
+      {% set mo = months[a.ends_at[5:7]|int - 1] %}{% set dy = a.ends_at[8:10] %}
+      <a class="auction-card" href="{{ url_for('auction_detail', auction_id=a.id) }}">
+        <div class="date-badge"><span class="date-day">{{ dy }}</span><span class="date-mo">{{ mo }}</span></div>
+        <div class="auction-card-main">
+          <h3>{{ a.title }}</h3>
+          <div class="auction-card-foot">
+            <span class="pill pill-live">Bidding open</span>
+            <span class="countdown small" data-countdown data-ends="{{ a.ends_at }}">Ends in …</span>
+          </div>
+        </div>
+        <span class="card-arrow">→</span>
+      </a>
+      {% endfor %}
+      {% for a in upcoming %}
+      {% set mo = months[a.starts_at[5:7]|int - 1] %}{% set dy = a.starts_at[8:10] %}
+      <a class="auction-card" href="{{ url_for('auction_detail', auction_id=a.id) }}">
+        <div class="date-badge"><span class="date-day">{{ dy }}</span><span class="date-mo">{{ mo }}</span></div>
+        <div class="auction-card-main">
+          <h3>{{ a.title }}</h3>
+          <div class="auction-card-foot">
+            <span class="pill pill-soon">Opens soon</span>
+            <span class="countdown small" data-countdown data-ends="{{ a.starts_at }}">Starts in …</span>
+          </div>
+        </div>
+        <span class="card-arrow">→</span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty">
+      <h2>No auctions running right now</h2>
+      <p class="muted">Check back soon — new auctions are added regularly. Questions? Call <a href="tel:{{ business_phone }}">{{ business_phone }}</a>.</p>
+    </div>
+    {% endif %}
+  </div>
+</section>
 
-{% if upcoming %}
-<h2>📅 Upcoming auctions</h2>
-<div class="auction-list">
-  {% for a in upcoming %}
-  <a class="auction-card" href="{{ url_for('auction_detail', auction_id=a.id) }}">
-    <h3>{{ a.title }}</h3>
-    <p class="muted">Opens {{ a.starts_at[:16].replace('T', ' ') }} UTC</p>
-    <div class="countdown" data-countdown data-ends="{{ a.starts_at }}">Starts in …</div>
-  </a>
-  {% endfor %}
-</div>
-{% endif %}
-
-{% if not live and not upcoming %}
-<div class="empty">
-  <h2>No auctions running right now</h2>
-  <p class="muted">Check back soon — new auctions are added regularly. Questions? Call <a href="tel:{{ business_phone }}">{{ business_phone }}</a>.</p>
-</div>
-{% endif %}
+<section class="section alt full-bleed">
+  <div class="wrap">
+    <h2 class="section-title">Types of Items in K&amp;K Auctions</h2>
+    <p class="section-sub">Our auctions feature a wide variety of vehicles and parts, big and small. Actual items vary from auction to auction.</p>
+    <div class="types-grid">
+      <div class="type-card">
+        <div class="type-icon">🚗</div>
+        <h3>Vehicles &amp; Transportation</h3>
+        <p>Cars, trucks, SUVs, vans — runners, rebuilders and parts vehicles.</p>
+      </div>
+      <div class="type-card">
+        <div class="type-icon">⚙️</div>
+        <h3>Engines &amp; Transmissions</h3>
+        <p>Used engines, transmissions and drivetrain components.</p>
+      </div>
+      <div class="type-card">
+        <div class="type-icon">🔧</div>
+        <h3>Catalytic Converters</h3>
+        <p>OEM converters and exhaust components, graded and priced.</p>
+      </div>
+      <div class="type-card">
+        <div class="type-icon">🛞</div>
+        <h3>Rims &amp; Tires</h3>
+        <p>Aluminum and steel rims, new and used sets, plus tires.</p>
+      </div>
+      <div class="type-card">
+        <div class="type-icon">🚜</div>
+        <h3>Equipment &amp; Parts</h3>
+        <p>Shop equipment, tools, batteries and general auto parts.</p>
+      </div>
+    </div>
+  </div>
+</section>
 
 {% if featured %}
-<h2>⭐ Featured lots</h2>
-<div class="lot-grid">
-  {% for lot in featured %}
-  <a class="lot-card" href="{{ url_for('lot_detail', lot_id=lot.id) }}">
-    <img src="{{ lot_image(lot) }}" alt="{{ lot.title }}" loading="lazy">
-    <div class="lot-card-body">
-      <div class="lot-no">Lot {{ lot.lot_number }}</div>
-      <h4>{{ lot.title }}</h4>
-      <div class="lot-meta">
-        <span class="bid">{{ lot.current_bid_cents|money if lot.current_bid_cents else lot.starting_bid_cents|money }}</span>
-        <span class="muted small">{{ 'current bid' if lot.current_bid_cents else 'starting bid' }}</span>
-      </div>
-      <div class="countdown small" data-countdown data-ends="{{ lot.ends_at }}">…</div>
+<section class="section">
+  <div class="wrap">
+    <h2 class="section-title">Featured Lots</h2>
+    <p class="section-sub">Hand-picked lots ending soon — don't miss out.</p>
+    <div class="lot-grid">
+      {% for lot in featured %}
+      <a class="lot-card" href="{{ url_for('lot_detail', lot_id=lot.id) }}">
+        <span class="lot-img">
+          <img src="{{ lot_image(lot) }}" alt="{{ lot.title }}" loading="lazy">
+        </span>
+        <div class="lot-card-body">
+          <div class="lot-no">Lot {{ lot.lot_number }}</div>
+          <h4>{{ lot.title }}</h4>
+          <div class="lot-meta">
+            <span class="bid">{{ lot.current_bid_cents|money if lot.current_bid_cents else lot.starting_bid_cents|money }}</span>
+            <span class="muted small">{{ 'current bid' if lot.current_bid_cents else 'starting bid' }}</span>
+          </div>
+          <div class="countdown small" data-countdown data-ends="{{ lot.ends_at }}">…</div>
+        </div>
+      </a>
+      {% endfor %}
     </div>
-  </a>
-  {% endfor %}
-</div>
+  </div>
+</section>
 {% endif %}
 
-<section class="how">
-  <h2>How it works</h2>
-  <ol class="steps">
-    <li><strong>Register</strong> — free account, no deposit needed.</li>
-    <li><strong>Browse &amp; watch</strong> — find lots you want and add them to your watchlist.</li>
-    <li><strong>Bid</strong> — auctions are timed. If a bid lands in the final minutes, the auction extends (soft close) so everyone gets a fair shot.</li>
-    <li><strong>Win &amp; pick up</strong> — winners are notified; pickup in the Greater Toronto Area.</li>
-  </ol>
-  <p class="muted">All lots sold as-is, where-is. Questions? Call/text <a href="tel:{{ business_phone }}">{{ business_phone }}</a>.</p>
+<section class="section blue full-bleed">
+  <div class="wrap">
+    <h2 class="section-title">K&amp;K Ontario</h2>
+    <p class="section-sub">We run timed online auctions across Ontario — bid from anywhere, pick up in the Greater Toronto Area.</p>
+    <div class="loc-grid">
+      <div class="loc-card">
+        <div class="loc-card-body">
+          <span class="loc-tag">Pickup</span>
+          <h3>Greater Toronto Area</h3>
+          <p>Winning bidders pick up their lots in the GTA. Fast, easy handoff — bring a trailer for vehicles.</p>
+        </div>
+      </div>
+      <div class="loc-card">
+        <div class="loc-card-body">
+          <span class="loc-tag">We buy</span>
+          <h3>Ontario-wide</h3>
+          <p>K&amp;K Bin Cleanup buys unwanted cars, converters, engines, transmissions &amp; rims all across Ontario.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-band full-bleed">
+  <div class="wrap">
+    <h2>Stay in the loop</h2>
+    <p>New auctions are posted regularly. Questions about a lot or an auction? Call or text us any time.</p>
+    <a class="btn btn-dark btn-lg" href="tel:{{ business_phone }}">📞 {{ business_phone }}</a>
+  </div>
 </section>
 
 {% endblock %}

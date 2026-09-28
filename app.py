@@ -869,7 +869,7 @@ def _auction_form(auction):
         except ValueError:
             soft = 5
         try:
-            premium = max(0.0, min(100.0, float(request.form.get("buyers_premium_pct", 0) or 0)))
+            premium = max(0.0, min(100.0, float(request.form.get("buyers_premium_pct") or 9)))
         except ValueError:
             premium = 0.0
         status = request.form.get("status", "draft")
@@ -914,7 +914,7 @@ def _auction_form(auction):
         "ends_at": _dt_local(auction["ends_at"]) if auction else "",
         "soft_close_minutes": auction["soft_close_minutes"] if auction else 5,
         "status": auction["status"] if auction else "draft",
-        "buyers_premium_pct": auction["buyers_premium_pct"] if auction and "buyers_premium_pct" in auction.keys() else 0,
+        "buyers_premium_pct": auction["buyers_premium_pct"] if auction and "buyers_premium_pct" in auction.keys() else 9,
     }
     lots = []
     if auction:

@@ -1,6 +1,7 @@
 /* K&K Auctions — Bryan's-inspired design language
    Alfa Slab One display type + Inter body, signal yellow #FFCE1C,
-   black headers, light section rhythm. K&K branding throughout. */
+   black headers, light section rhythm. K&K branding throughout.
+   Build: 2026-09-28 bryans-redesign */
 
 :root {
   --yellow: #ffce1c;

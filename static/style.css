@@ -161,3 +161,6 @@ tr.top-bid td { background: rgba(201, 162, 39, 0.08); }
   table.bids { font-size: 0.9rem; }
   table.bids th, table.bids td { padding: 8px 6px; }
 }
+
+/* stripe card element */
+.stripe-card { background: #fff; border: 1px solid var(--card-border); border-radius: 8px; padding: 12px; margin: 6px 0 12px; }

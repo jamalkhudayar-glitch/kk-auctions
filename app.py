@@ -5,7 +5,10 @@ Stack: Flask + sqlite3 (stdlib) + Werkzeug. No ORM, no build step.
 """
 import os
 import sqlite3
+import json
 import urllib.parse
+import urllib.request
+import urllib.error
 from datetime import datetime, timezone, timedelta
 from functools import wraps
 
@@ -26,6 +29,58 @@ app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-me")
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 MB uploads
 
 BUSINESS_PHONE = "6476793420"
+
+STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
+STRIPE_PUBLISHABLE_KEY = os.environ.get("STRIPE_PUBLISHABLE_KEY", "")
+
+
+# ------------------------------------------------------- Stripe payments
+class StripeError(Exception):
+    pass
+
+
+def stripe_configured():
+    return bool(STRIPE_SECRET_KEY and STRIPE_PUBLISHABLE_KEY)
+
+
+def stripe_request(method, path, params=None):
+    """Minimal Stripe API client (form-encoded, stdlib only). Raises StripeError."""
+    if not STRIPE_SECRET_KEY:
+        raise StripeError("Stripe is not configured on this server.")
+    data = None
+    headers = {"Stripe-Version": "2024-06-20"}
+    if params is not None:
+        data = urllib.parse.urlencode(params).encode()
+        headers["Content-Type"] = "application/x-www-form-urlencoded"
+    req = urllib.request.Request("https://api.stripe.com" + path, data=data,
+                                 headers=headers, method=method)
+    req.add_header("Authorization", f"Bearer {STRIPE_SECRET_KEY}")
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return json.loads(resp.read().decode())
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", "replace")
+        try:
+            msg = json.loads(body)["error"]["message"]
+        except Exception:
+            msg = body[:200]
+        raise StripeError(msg)
+    except Exception as e:
+        raise StripeError(f"Could not reach Stripe: {e}")
+
+
+def get_or_create_stripe_customer(db, user):
+    """Return the Stripe customer id for a user, creating one if needed."""
+    if user["stripe_customer_id"]:
+        return user["stripe_customer_id"]
+    customer = stripe_request("POST", "/v1/customers",
+                              {"email": user["email"], "name": user["name"],
+                               "phone": user["phone"] or "",
+                               "metadata[user_id]": str(user["id"])})
+    db.execute("UPDATE users SET stripe_customer_id = ? WHERE id = ?",
+               (customer["id"], user["id"]))
+    db.commit()
+    return customer["id"]
 
 
 # ---------------------------------------------------------------- DB helpers
@@ -105,9 +160,37 @@ CREATE TABLE IF NOT EXISTS watchlist (
     created_at TEXT NOT NULL,
     PRIMARY KEY (user_id, lot_id)
 );
+CREATE TABLE IF NOT EXISTS payments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    auction_id INTEGER NOT NULL REFERENCES auctions(id),
+    lot_ids TEXT NOT NULL,
+    amount_cents INTEGER NOT NULL,
+    currency TEXT NOT NULL DEFAULT 'cad',
+    stripe_payment_intent_id TEXT,
+    status TEXT NOT NULL DEFAULT 'pending',
+    error_message TEXT,
+    created_at TEXT NOT NULL
+);
 CREATE INDEX IF NOT EXISTS idx_bids_lot ON bids(lot_id);
 CREATE INDEX IF NOT EXISTS idx_lots_auction ON lots(auction_id);
+CREATE INDEX IF NOT EXISTS idx_payments_auction ON payments(auction_id);
 """
+
+
+def migrate_db(db):
+    """Add newer columns to existing databases (fresh installs get them via SCHEMA)."""
+    cols = {r["name"] for r in
+            db.execute("PRAGMA table_info(users)").fetchall()}
+    for name, ddl in (
+        ("stripe_customer_id", "TEXT"),
+        ("stripe_pm_id", "TEXT"),
+        ("card_brand", "TEXT"),
+        ("card_last4", "TEXT"),
+    ):
+        if name not in cols:
+            db.execute(f"ALTER TABLE users ADD COLUMN {name} {ddl}")
+    db.commit()
 
 
 def init_db():
@@ -116,6 +199,7 @@ def init_db():
     db.execute("PRAGMA foreign_keys = ON")
     db.executescript(SCHEMA)
     db.commit()
+    migrate_db(db)
     # Seed on first run (empty users table)
     if db.execute("SELECT COUNT(*) AS c FROM users").fetchone()["c"] == 0:
         seed_db(db)
@@ -424,6 +508,13 @@ def place_bid(lot_id):
         flash("Bidding is closed for this lot.", "error")
         return redirect(url_for("lot_detail", lot_id=lot_id))
 
+    # HiBid-style: winners are charged automatically, so a card on file is required
+    if stripe_configured() and not user["stripe_pm_id"]:
+        flash("Add your card on file before bidding — auction winners are"
+              " charged automatically.", "warn")
+        return redirect(url_for("payment_method",
+                                next=url_for("lot_detail", lot_id=lot_id)))
+
     try:
         amount_dollars = float(request.form.get("amount", "0"))
     except (ValueError, TypeError):
@@ -525,6 +616,17 @@ def register():
             user = db.execute("SELECT * FROM users WHERE email = ?",
                              (email,)).fetchone()
             session["user_id"] = user["id"]
+            if stripe_configured():
+                try:
+                    get_or_create_stripe_customer(db, user)
+                except StripeError as e:
+                    flash(f"Account created, but card setup hit a snag: {e}."
+                          " You can add your card from My Account.", "warn")
+                    return redirect(request.args.get("next") or url_for("index"))
+                flash(f"Welcome, {name}! One last step: add your card on file"
+                      " to activate bidding.", "ok")
+                return redirect(url_for("payment_method",
+                                        next=request.args.get("next") or url_for("index")))
             flash(f"Welcome, {name}! Your account is ready — happy bidding.", "ok")
             return redirect(request.args.get("next") or url_for("index"))
     return render_template("register.html")
@@ -605,6 +707,70 @@ def change_password():
             flash("Password changed successfully.", "ok")
             return redirect(url_for("account"))
     return render_template("account_password.html")
+
+
+# ------------------------------------------------- card on file (Stripe)
+@app.route("/account/payment-method")
+@login_required
+def payment_method():
+    if not stripe_configured():
+        flash("Card payments are not enabled yet — please check back soon.",
+              "warn")
+        return redirect(url_for("account"))
+    user = current_user()
+    return render_template(
+        "account/payment_method.html",
+        publishable_key=STRIPE_PUBLISHABLE_KEY,
+        card_brand=user["card_brand"], card_last4=user["card_last4"],
+        next_url=request.args.get("next") or url_for("account"))
+
+
+@app.route("/account/payment-method/intent")
+@login_required
+def payment_method_intent():
+    """Create a SetupIntent so the browser can collect card details securely."""
+    if not stripe_configured():
+        return {"error": "Card payments are not enabled."}, 503
+    db = get_db()
+    user = current_user()
+    try:
+        customer_id = get_or_create_stripe_customer(db, user)
+        intent = stripe_request(
+            "POST", "/v1/setup_intents",
+            {"customer": customer_id, "usage": "off_session",
+             "payment_method_types[]": "card"})
+    except StripeError as e:
+        return {"error": str(e)}, 502
+    return {"client_secret": intent["client_secret"]}
+
+
+@app.route("/account/payment-method/confirm", methods=["POST"])
+@login_required
+def payment_method_confirm():
+    """Save the card Stripe.js just tokenized as the user's card on file."""
+    if not stripe_configured():
+        return {"error": "Card payments are not enabled."}, 503
+    db = get_db()
+    user = current_user()
+    pm_id = (request.get_json(silent=True) or {}).get("payment_method_id", "")
+    if not pm_id.startswith("pm_"):
+        return {"error": "Missing payment method."}, 400
+    try:
+        customer_id = get_or_create_stripe_customer(db, user)
+        stripe_request("POST", f"/v1/payment_methods/{pm_id}/attach",
+                       {"customer": customer_id})
+        stripe_request("POST", f"/v1/customers/{customer_id}",
+                       {"invoice_settings[default_payment_method]": pm_id})
+        pm = stripe_request("GET", f"/v1/payment_methods/{pm_id}")
+        card = pm.get("card", {})
+        db.execute(
+            "UPDATE users SET stripe_pm_id = ?, card_brand = ?, card_last4 = ?"
+            " WHERE id = ?",
+            (pm_id, card.get("brand"), card.get("last4"), user["id"]))
+        db.commit()
+    except StripeError as e:
+        return {"error": str(e)}, 502
+    return {"ok": True, "brand": card.get("brand"), "last4": card.get("last4")}
 
 
 # ------------------------------------------------------------------ admin
@@ -731,16 +897,70 @@ def admin_auction_close(auction_id):
         abort(404)
     lots = db.execute("SELECT * FROM lots WHERE auction_id = ?",
                       (auction_id,)).fetchall()
+    sold = []
     for lot in lots:
         if lot["status"] != "active":
             continue
         new_status = "sold" if lot["current_bid_cents"] else "no_sale"
         db.execute("UPDATE lots SET status = ? WHERE id = ?",
                    (new_status, lot["id"]))
+        if new_status == "sold":
+            sold.append(lot)
     db.execute("UPDATE auctions SET status = 'closed' WHERE id = ?", (auction_id,))
     db.commit()
-    flash(f"Auction closed: {sum(1 for l in lots if l['current_bid_cents'])} lot(s) sold.",
-          "ok")
+
+    # --- automatic winner charging (HiBid-style) ---
+    charged, failed = 0, 0
+    if stripe_configured() and sold:
+        by_winner = {}
+        for lot in sold:
+            by_winner.setdefault(lot["current_bidder_id"], []).append(lot)
+        for user_id, won_lots in by_winner.items():
+            winner = db.execute("SELECT * FROM users WHERE id = ?",
+                                (user_id,)).fetchone()
+            total = sum(l["current_bid_cents"] for l in won_lots)
+            lot_ids = ",".join(str(l["id"]) for l in won_lots)
+            status, pi_id, err = "failed", None, None
+            if winner and winner["stripe_customer_id"] and winner["stripe_pm_id"]:
+                try:
+                    pi = stripe_request(
+                        "POST", "/v1/payment_intents",
+                        {"amount": total, "currency": "cad",
+                         "customer": winner["stripe_customer_id"],
+                         "payment_method": winner["stripe_pm_id"],
+                         "off_session": "true", "confirm": "true",
+                         "receipt_email": winner["email"],
+                         "description": f"K&K Auctions: {auction['title']} —"
+                                       f" {len(won_lots)} lot(s)",
+                         "metadata[auction_id]": str(auction_id),
+                         "metadata[user_id]": str(user_id)})
+                    pi_id = pi["id"]
+                    status = pi["status"]  # "succeeded" when captured
+                    if status == "succeeded":
+                        charged += 1
+                    else:
+                        failed += 1
+                        err = f"Payment status: {status}"
+                except StripeError as e:
+                    failed += 1
+                    err = str(e)
+            else:
+                failed += 1
+                err = "Winner has no card on file."
+            db.execute(
+                "INSERT INTO payments (user_id, auction_id, lot_ids, amount_cents,"
+                " currency, stripe_payment_intent_id, status, error_message, created_at)"
+                " VALUES (?, ?, ?, ?, 'cad', ?, ?, ?, ?)",
+                (user_id, auction_id, lot_ids, total, pi_id, status, err,
+                 utcnow_iso()))
+            db.commit()
+
+    msg = f"Auction closed: {len(sold)} lot(s) sold."
+    if stripe_configured() and sold:
+        msg += f" Auto-charged {charged} winner(s)."
+        if failed:
+            msg += f" {failed} payment(s) need attention — see Winners."
+    flash(msg, "ok" if not failed else "warn")
     return redirect(url_for("admin_dashboard"))
 
 
@@ -757,7 +977,10 @@ def admin_winners(auction_id):
                   u.phone AS winner_phone
            FROM lots l LEFT JOIN users u ON u.id = l.current_bidder_id
            WHERE l.auction_id = ? ORDER BY l.lot_number""", (auction_id,)).fetchall()
-    return render_template("admin/winners.html", auction=auction, lots=lots)
+    payments = {p["user_id"]: p for p in db.execute(
+        "SELECT * FROM payments WHERE auction_id = ?", (auction_id,)).fetchall()}
+    return render_template("admin/winners.html", auction=auction, lots=lots,
+                           payments=payments, stripe_configured=stripe_configured())
 
 
 # ------------------------------------------------------------ admin: lots

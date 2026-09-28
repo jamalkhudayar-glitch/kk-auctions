@@ -178,6 +178,7 @@ CREATE TABLE IF NOT EXISTS payments (
     auction_id INTEGER NOT NULL REFERENCES auctions(id),
     lot_ids TEXT NOT NULL,
     amount_cents INTEGER NOT NULL,
+    premium_cents INTEGER NOT NULL DEFAULT 0,
     currency TEXT NOT NULL DEFAULT 'cad',
     stripe_payment_intent_id TEXT,
     status TEXT NOT NULL DEFAULT 'pending',
@@ -206,6 +207,10 @@ def migrate_db(db):
              db.execute("PRAGMA table_info(auctions)").fetchall()}
     if "buyers_premium_pct" not in acols:
         db.execute("ALTER TABLE auctions ADD COLUMN buyers_premium_pct REAL NOT NULL DEFAULT 0")
+    pcols = {r["name"] for r in
+             db.execute("PRAGMA table_info(payments)").fetchall()}
+    if "premium_cents" not in pcols:
+        db.execute("ALTER TABLE payments ADD COLUMN premium_cents INTEGER NOT NULL DEFAULT 0")
     db.commit()
 
 
@@ -949,14 +954,21 @@ def admin_auction_close(auction_id):
         by_winner = {}
         for lot in sold:
             by_winner.setdefault(lot["current_bidder_id"], []).append(lot)
+        premium_pct = auction["buyers_premium_pct"] or 0
         for user_id, won_lots in by_winner.items():
             winner = db.execute("SELECT * FROM users WHERE id = ?",
                                 (user_id,)).fetchone()
-            total = sum(l["current_bid_cents"] for l in won_lots)
+            subtotal = sum(l["current_bid_cents"] for l in won_lots)
+            premium_cents = int(round(subtotal * premium_pct / 100)) if premium_pct else 0
+            total = subtotal + premium_cents
             lot_ids = ",".join(str(l["id"]) for l in won_lots)
             status, pi_id, err = "failed", None, None
             if winner and winner["stripe_customer_id"] and winner["stripe_pm_id"]:
                 try:
+                    desc = (f"K&K Auctions: {auction['title']} —"
+                            f" {len(won_lots)} lot(s)")
+                    if premium_cents:
+                        desc += f" (incl. {premium_pct:g}% buyer's premium)"
                     pi = stripe_request(
                         "POST", "/v1/payment_intents",
                         {"amount": total, "currency": "cad",
@@ -964,8 +976,7 @@ def admin_auction_close(auction_id):
                          "payment_method": winner["stripe_pm_id"],
                          "off_session": "true", "confirm": "true",
                          "receipt_email": winner["email"],
-                         "description": f"K&K Auctions: {auction['title']} —"
-                                       f" {len(won_lots)} lot(s)",
+                         "description": desc,
                          "metadata[auction_id]": str(auction_id),
                          "metadata[user_id]": str(user_id)})
                     pi_id = pi["id"]
@@ -983,10 +994,11 @@ def admin_auction_close(auction_id):
                 err = "Winner has no card on file."
             db.execute(
                 "INSERT INTO payments (user_id, auction_id, lot_ids, amount_cents,"
-                " currency, stripe_payment_intent_id, status, error_message, created_at)"
-                " VALUES (?, ?, ?, ?, 'cad', ?, ?, ?, ?)",
-                (user_id, auction_id, lot_ids, total, pi_id, status, err,
-                 utcnow_iso()))
+                " premium_cents, currency, stripe_payment_intent_id, status,"
+                " error_message, created_at)"
+                " VALUES (?, ?, ?, ?, ?, 'cad', ?, ?, ?, ?)",
+                (user_id, auction_id, lot_ids, total, premium_cents, pi_id,
+                 status, err, utcnow_iso()))
             db.commit()
 
     msg = f"Auction closed: {len(sold)} lot(s) sold."
@@ -1013,8 +1025,13 @@ def admin_winners(auction_id):
            WHERE l.auction_id = ? ORDER BY l.lot_number""", (auction_id,)).fetchall()
     payments = {p["user_id"]: p for p in db.execute(
         "SELECT * FROM payments WHERE auction_id = ?", (auction_id,)).fetchall()}
+    pay_summary = db.execute(
+        """SELECT p.*, u.name AS winner_name FROM payments p
+           JOIN users u ON u.id = p.user_id WHERE p.auction_id = ?
+           ORDER BY p.amount_cents DESC""", (auction_id,)).fetchall()
     return render_template("admin/winners.html", auction=auction, lots=lots,
-                           payments=payments, stripe_configured=stripe_configured())
+                           payments=payments, pay_summary=pay_summary,
+                           stripe_configured=stripe_configured())
 
 
 # ------------------------------------------------------------ admin: lots

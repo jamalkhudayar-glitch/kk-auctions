@@ -39,4 +39,25 @@
 
 <p><button class="btn btn-outline" onclick="window.print()">Print report</button></p>
 
+{% if stripe_configured and pay_summary %}
+<h2>Payments</h2>
+<table class="bids admin-table">
+  <tr><th>Winner</th><th>Lots won</th><th>Subtotal</th><th>Buyer's premium</th><th>Charged</th><th>Status</th></tr>
+  {% for p in pay_summary %}
+  <tr>
+    <td>{{ p.winner_name }}</td>
+    <td>{{ p.lot_ids.split(',')|length }}</td>
+    <td>{{ (p.amount_cents - p.premium_cents)|money }}</td>
+    <td>{{ p.premium_cents|money }}</td>
+    <td><strong>{{ p.amount_cents|money }}</strong></td>
+    <td>
+      {% if p.status == 'succeeded' %}<span class="pill pill-live">PAID</span>
+      {% else %}<span class="pill pill-outbid">{{ p.status|upper }}</span>
+        <div class="muted small">{{ p.error_message or '' }}</div>{% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+
 {% endblock %}

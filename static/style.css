@@ -164,3 +164,8 @@ tr.top-bid td { background: rgba(201, 162, 39, 0.08); }
 
 /* stripe card element */
 .stripe-card { background: #fff; border: 1px solid var(--card-border); border-radius: 8px; padding: 12px; margin: 6px 0 12px; }
+
+/* terms page + register checkbox */
+.terms-list li { margin-bottom: 12px; line-height: 1.55; }
+label.check { display: flex; align-items: flex-start; gap: 8px; font-size: 14px; }
+label.check input[type="checkbox"] { width: 18px; height: 18px; margin-top: 2px; flex-shrink: 0; }

@@ -24,6 +24,9 @@
     <label>Soft-close minutes
       <input type="number" name="soft_close_minutes" min="0" max="60" value="{{ form.soft_close_minutes }}">
     </label>
+    <label>Buyer's premium %
+      <input type="number" name="buyers_premium_pct" min="0" max="100" step="0.5" value="{{ form.buyers_premium_pct }}">
+    </label>
     <label>Status
       <select name="status">
         {% for s in ['draft', 'active', 'closed'] %}

@@ -960,6 +960,10 @@ def admin_auction_close(auction_id):
                                 (user_id,)).fetchone()
             subtotal = sum(l["current_bid_cents"] for l in won_lots)
             premium_cents = int(round(subtotal * premium_pct / 100)) if premium_pct else 0
+            # Safety cap: the premium never exceeds 50% of the invoice (hammer total).
+            max_premium = subtotal // 2
+            if premium_cents > max_premium:
+                premium_cents = max_premium
             total = subtotal + premium_cents
             lot_ids = ",".join(str(l["id"]) for l in won_lots)
             status, pi_id, err = "failed", None, None

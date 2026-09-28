@@ -18,6 +18,11 @@ from flask import (
 )
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
+try:
+    from PIL import Image
+    _PIL_OK = True
+except Exception:
+    _PIL_OK = False
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.environ.get("KK_DB", os.path.join(BASE_DIR, "kk_auctions.db"))
@@ -26,7 +31,7 @@ ALLOWED_EXT = {"png", "jpg", "jpeg", "gif", "webp"}
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-me")
-app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 MB uploads
+app.config["MAX_CONTENT_LENGTH"] = 64 * 1024 * 1024  # 64 MB uploads
 
 BUSINESS_PHONE = "6476793420"
 
@@ -994,7 +999,23 @@ def _save_uploads(files):
         if ext not in ALLOWED_EXT:
             continue
         name = f"{utcnow().strftime('%Y%m%d%H%M%S%f')}_{secure_filename(f.filename)}"
-        f.save(os.path.join(UPLOAD_DIR, name))
+        dest = os.path.join(UPLOAD_DIR, name)
+        f.save(dest)
+        # Shrink phone photos so uploads stay fast and small.
+        if _PIL_OK and ext in {"jpg", "jpeg", "png", "webp"}:
+            try:
+                im = Image.open(dest)
+                im = Image.Image.transpose(im, Image.Transpose.EXIF) if hasattr(Image, "Transpose") else im
+                im.thumbnail((1600, 1600))
+                if im.mode in ("RGBA", "P"):
+                    im = im.convert("RGB")
+                im.save(dest, "JPEG", quality=82, optimize=True)
+                base = dest.rsplit(".", 1)[0] + ".jpg"
+                if base != dest:
+                    os.replace(dest, base)
+                    name = os.path.basename(base)
+            except Exception:
+                pass
         saved.append(name)
     return saved
 

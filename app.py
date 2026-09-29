@@ -753,6 +753,11 @@ def auction_directory():
                            companies=ONTARIO_AUCTION_COMPANIES)
 
 
+@app.route("/sell-with-kk")
+def sell_with_kk():
+    return render_template("sell_with_kk.html")
+
+
 # ------------------------------------------------------------------ auth
 @app.route("/register", methods=["GET", "POST"])
 def register():

@@ -7,7 +7,7 @@
 <p class="muted">{{ auction.title }}</p>
 
 <table class="bids admin-table">
-  <tr><th>Lot #</th><th>Lot</th><th>Result</th><th>Winner</th><th>Email</th><th>Phone</th><th>Winning bid</th>{% if stripe_configured %}<th>Payment</th>{% endif %}</tr>
+  <tr><th>Lot #</th><th>Lot</th><th>Result</th><th>Winner</th><th>Email</th><th>Phone</th><th>Winning bid</th>{% if stripe_configured or payments %}<th>Payment</th>{% endif %}</tr>
   {% for lot in lots %}
   <tr>
     <td>{{ lot.lot_number }}</td>
@@ -21,11 +21,11 @@
     <td class="muted">{{ lot.winner_email or '—' }}</td>
     <td class="muted">{{ lot.winner_phone or '—' }}</td>
     <td><strong>{{ lot.current_bid_cents|money if lot.current_bid_cents else '—' }}</strong></td>
-    {% if stripe_configured %}
+    {% if stripe_configured or payments %}
     <td>
       {% set pay = payments.get(lot.current_bidder_id) %}
       {% if lot.status == 'sold' and pay %}
-        {% if pay.status == 'succeeded' %}<span class="pill pill-live">PAID</span>
+        {% if pay.status == 'succeeded' %}<span class="pill pill-live">PAID · {{ (pay.method or 'card')|upper }}</span>
         {% else %}<span class="pill pill-outbid">{{ pay.status|upper }}</span>
           <div class="muted small">{{ pay.error_message or '' }}</div>{% endif %}
       {% elif lot.status == 'sold' %}
@@ -39,10 +39,34 @@
 
 <p><button class="btn btn-outline" onclick="window.print()">Print report</button></p>
 
-{% if stripe_configured and pay_summary %}
+{% if pay_summary or winners_owed %}
 <h2>Payments</h2>
+{% if winners_owed %}
+<form method="post" action="{{ url_for('admin_record_payment', auction_id=auction.id) }}" class="pay-form">
+  <strong>Record cash / e-transfer payment:</strong>
+  <select name="user_id" id="pay-user" required>
+    <option value="">— select winner —</option>
+    {% for w in winners_owed %}
+    <option value="{{ w.user_id }}" data-total="{{ w.total_cents }}">{{ w.winner_name }} — owes {{ w.total_cents|money }}</option>
+    {% endfor %}
+  </select>
+  <select name="method" required>
+    <option value="cash">Cash</option>
+    <option value="etransfer">E-transfer</option>
+  </select>
+  <input type="number" name="amount_cents" id="pay-amount" min="1" step="1" placeholder="Amount in cents" required>
+  <button class="btn btn-brand" type="submit">Record payment</button>
+</form>
+<script>
+document.getElementById('pay-user').addEventListener('change', function() {
+  var opt = this.options[this.selectedIndex];
+  if (opt && opt.dataset.total) document.getElementById('pay-amount').value = opt.dataset.total;
+});
+</script>
+{% endif %}
+{% if pay_summary %}
 <table class="bids admin-table">
-  <tr><th>Winner</th><th>Lots won</th><th>Subtotal</th><th>Buyer's premium</th><th>Charged</th><th>Status</th></tr>
+  <tr><th>Winner</th><th>Lots won</th><th>Subtotal</th><th>Buyer's premium</th><th>Charged</th><th>Method</th><th>Status</th></tr>
   {% for p in pay_summary %}
   <tr>
     <td>{{ p.winner_name }}</td>
@@ -50,6 +74,7 @@
     <td>{{ (p.amount_cents - p.premium_cents)|money }}</td>
     <td>{{ p.premium_cents|money }}</td>
     <td><strong>{{ p.amount_cents|money }}</strong></td>
+    <td>{{ (p.method or 'card')|upper }}</td>
     <td>
       {% if p.status == 'succeeded' %}<span class="pill pill-live">PAID</span>
       {% else %}<span class="pill pill-outbid">{{ p.status|upper }}</span>
@@ -58,6 +83,7 @@
   </tr>
   {% endfor %}
 </table>
+{% endif %}
 {% endif %}
 
 {% endblock %}

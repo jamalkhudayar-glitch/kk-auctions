@@ -1083,8 +1083,8 @@ def admin_record_payment(auction_id):
     user_id = request.form.get("user_id", type=int)
     method = request.form.get("method", "")
     amount_cents = request.form.get("amount_cents", type=int)
-    if method not in ("cash", "etransfer"):
-        flash("Choose cash or e-transfer.", "error")
+    if method not in ("cash", "etransfer", "bank"):
+        flash("Choose cash, e-transfer or bank transfer.", "error")
         return redirect(url_for("admin_winners", auction_id=auction_id))
     winner_lots = db.execute(
         """SELECT id, current_bid_cents FROM lots

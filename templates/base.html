@@ -6,7 +6,7 @@
 <title>{% block title %}K&amp;K Auctions{% endblock %}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -39,7 +39,7 @@
         <a href="{{ url_for('logout') }}">Log out</a>
       {% else %}
         <a href="{{ url_for('login') }}">Log in</a>
-        <a href="{{ url_for('register') }}" class="btn btn-gold btn-sm">Register to bid</a>
+        <a href="{{ url_for('register') }}" class="btn btn-brand btn-sm">Register to bid</a>
       {% endif %}
       <a class="nav-phone" href="tel:{{ business_phone }}">📞 {{ business_phone }}</a>
     </nav>
@@ -71,7 +71,7 @@
             <span class="brand-sub">AUCTIONS</span>
           </span>
         </a>
-        <p>Timed online auctions across Ontario — cars, equipment &amp; parts.<br>Powered by K&amp;K Bin Cleanup. We buy unwanted cars, catalytic converters, engines, transmissions &amp; rims.</p>
+        <p>Timed online auctions across Ontario — cars, equipment &amp; parts.</p>
       </div>
       <div class="footer-col">
         <h4>Auctions</h4>

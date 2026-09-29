@@ -7,24 +7,10 @@
   <div class="wrap">
     <span class="hero-eyebrow">Welcome to K&amp;K Auctions</span>
     <h1>Bid on cars, <span class="hl">equipment</span> &amp; parts</h1>
-    <p>Timed online auctions across Ontario. Register free, place your bid, win the lot — fair soft-close bidding on every auction.</p>
-    {% if live %}
-    <form class="hero-search" action="{{ url_for('auction_detail', auction_id=live[0].id) }}" method="get" role="search">
-      <input type="search" name="q" placeholder="Search lots — e.g. Honda Civic, rims, engine…" aria-label="Search lots">
-      <button class="btn btn-gold" type="submit">Search</button>
-    </form>
-    {% else %}
+    <p>Timed online auctions across Ontario. They feature a great selection of vehicles, equipment, parts, rims &amp; more — bid from anywhere!</p>
     <div class="hero-cta-row">
-      {% if not current_user %}
-      <a href="{{ url_for('register') }}" class="btn btn-gold btn-lg">Register to bid — it's free</a>
-      {% endif %}
-      <a href="#auctions" class="btn btn-outline btn-lg">View schedule</a>
-    </div>
-    {% endif %}
-    <div class="hero-badges">
-      <div class="hero-badge"><strong>100%</strong><span>Online bidding</span></div>
-      <div class="hero-badge"><strong>$0</strong><span>Registration fee</span></div>
-      <div class="hero-badge"><strong>GTA</strong><span>Local pickup</span></div>
+      <a href="#auctions" class="btn btn-gold btn-lg">View Schedule</a>
+      <a href="#how" class="btn btn-outline btn-lg">Learn More</a>
     </div>
   </div>
 </section>
@@ -56,7 +42,7 @@
         <div class="auction-card-main">
           <h3>{{ a.title }}</h3>
           <div class="auction-card-foot">
-            <span class="pill pill-soon">Opens soon</span>
+            <span class="pill pill-soon">Auction opens soon</span>
             <span class="countdown small" data-countdown data-ends="{{ a.starts_at }}">Starts in …</span>
           </div>
         </div>
@@ -76,7 +62,7 @@
 <section class="section alt full-bleed">
   <div class="wrap">
     <h2 class="section-title">Types of Items in K&amp;K Auctions</h2>
-    <p class="section-sub">Our auctions feature a wide variety of vehicles and parts, big and small. Actual items vary from auction to auction.</p>
+    <p class="section-sub">All K&amp;K auctions feature a wide variety of items big and small. Please note: actual items will vary from auction to auction.</p>
     <div class="types-grid">
       <div class="type-card">
         <div class="type-icon">🚗</div>
@@ -99,10 +85,13 @@
         <p>Aluminum and steel rims, new and used sets, plus tires.</p>
       </div>
       <div class="type-card">
-        <div class="type-icon">🚜</div>
-        <h3>Equipment &amp; Parts</h3>
+        <div class="type-icon">🧰</div>
+        <h3>Tools &amp; Equipment</h3>
         <p>Shop equipment, tools, batteries and general auto parts.</p>
       </div>
+    </div>
+    <div class="center-row">
+      <a href="#auctions" class="btn btn-blue btn-lg">View Upcoming Auctions</a>
     </div>
   </div>
 </section>
@@ -136,32 +125,54 @@
 
 <section class="section blue full-bleed">
   <div class="wrap">
-    <h2 class="section-title">K&amp;K Ontario</h2>
-    <p class="section-sub">We run timed online auctions across Ontario — bid from anywhere, pick up in the Greater Toronto Area.</p>
+    <h2 class="section-title">K&amp;K Ontario Locations</h2>
+    <p class="section-sub">We host timed online auctions across Ontario — bid from anywhere, pick up in the Greater Toronto Area.</p>
     <div class="loc-grid">
-      <div class="loc-card">
+      <a class="loc-card" href="https://maps.google.com/?q=Greater+Toronto+Area,+Ontario" target="_blank" rel="noopener">
         <div class="loc-card-body">
           <span class="loc-tag">Pickup</span>
           <h3>Greater Toronto Area</h3>
           <p>Winning bidders pick up their lots in the GTA. Fast, easy handoff — bring a trailer for vehicles.</p>
+          <span class="loc-map">View map →</span>
         </div>
-      </div>
-      <div class="loc-card">
+      </a>
+      <a class="loc-card" href="https://maps.google.com/?q=Ontario,+Canada" target="_blank" rel="noopener">
         <div class="loc-card-body">
           <span class="loc-tag">We buy</span>
-          <h3>Ontario-wide</h3>
+          <h3>Ontario-Wide</h3>
           <p>K&amp;K Bin Cleanup buys unwanted cars, converters, engines, transmissions &amp; rims all across Ontario.</p>
+          <span class="loc-map">View map →</span>
         </div>
-      </div>
+      </a>
     </div>
   </div>
 </section>
 
-<section class="cta-band full-bleed">
+<section class="section" id="how">
   <div class="wrap">
-    <h2>Stay in the loop</h2>
-    <p>New auctions are posted regularly. Questions about a lot or an auction? Call or text us any time — or email <a href="mailto:Jamalkhudayar@gmail.com" style="color:var(--black);font-weight:800;">Jamalkhudayar@gmail.com</a>.</p>
-    <a class="btn btn-dark btn-lg" href="tel:{{ business_phone }}">📞 {{ business_phone }}</a>
+    <h2 class="section-title">How It Works</h2>
+    <p class="section-sub">Bidding with K&amp;K is simple, online and fair.</p>
+    <div class="how">
+      <ol class="steps">
+        <li><strong>Register</strong> — free account, no deposit needed to start bidding.</li>
+        <li><strong>Browse &amp; watch</strong> — find the lots you want and add them to your watchlist.</li>
+        <li><strong>Bid</strong> — auctions are timed. Bids in the final minutes extend the clock (soft close) so everyone gets a fair shot.</li>
+        <li><strong>Win &amp; pick up</strong> — winners are notified right away; pickup in the Greater Toronto Area.</li>
+      </ol>
+      <p class="muted">All lots sold as-is, where-is. Questions? Call/text <a href="tel:{{ business_phone }}">{{ business_phone }}</a>.</p>
+    </div>
+  </div>
+</section>
+
+<section class="subscribe-band full-bleed">
+  <div class="wrap">
+    <h2>Stay Up To Date</h2>
+    <p>Sign up for the K&amp;K email list to receive updates on upcoming auctions. You can unsubscribe at any time.</p>
+    <form class="subscribe-form" id="subscribe-form">
+      <input type="email" name="email" placeholder="Your email address" required aria-label="Email address">
+      <button class="btn btn-dark btn-lg" type="submit">Subscribe Now</button>
+    </form>
+    <p class="muted small">Prefer to talk? Call or text <a href="tel:{{ business_phone }}">{{ business_phone }}</a> or email <a href="mailto:Jamalkhudayar@gmail.com">Jamalkhudayar@gmail.com</a>.</p>
   </div>
 </section>
 

@@ -381,6 +381,20 @@ def inject_common():
     return {"current_user": current_user(), "business_phone": BUSINESS_PHONE}
 
 
+@app.template_filter("hibid_dt")
+def hibid_dt(iso):
+    """Display-only: 'Saturday October 3rd @ 8:00am' like Bryan's HiBid listings."""
+    try:
+        dt = datetime.fromisoformat(iso)
+    except Exception:
+        return iso
+    d = dt.day
+    suf = "th" if 11 <= d <= 13 else {1: "st", 2: "nd", 3: "rd"}.get(d % 10, "th")
+    ampm = "am" if dt.hour < 12 else "pm"
+    h = dt.hour % 12 or 12
+    return f"{dt:%A} {dt:%B} {d}{suf} @ {h}:{dt:%M}{ampm}"
+
+
 def cents_to_dollars(cents):
     if cents is None:
         return None

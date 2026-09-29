@@ -211,6 +211,8 @@ def migrate_db(db):
              db.execute("PRAGMA table_info(payments)").fetchall()}
     if "premium_cents" not in pcols:
         db.execute("ALTER TABLE payments ADD COLUMN premium_cents INTEGER NOT NULL DEFAULT 0")
+    if "method" not in pcols:
+        db.execute("ALTER TABLE payments ADD COLUMN method TEXT NOT NULL DEFAULT 'card'")
     db.commit()
 
 
@@ -1047,9 +1049,64 @@ def admin_winners(auction_id):
         """SELECT p.*, u.name AS winner_name FROM payments p
            JOIN users u ON u.id = p.user_id WHERE p.auction_id = ?
            ORDER BY p.amount_cents DESC""", (auction_id,)).fetchall()
+    # Winners with sold lots and what they owe (for manual cash/e-transfer entry)
+    pct = auction["buyers_premium_pct"] or 0
+    owed_rows = db.execute(
+        """SELECT u.id AS user_id, u.name AS winner_name,
+                  SUM(l.current_bid_cents) AS subtotal
+           FROM lots l JOIN users u ON u.id = l.current_bidder_id
+           WHERE l.auction_id = ? AND l.status = 'sold'
+           GROUP BY u.id, u.name ORDER BY u.name""", (auction_id,)).fetchall()
+    paid_ids = {p["user_id"] for p in payments.values()}
+    winners_owed = [
+        {"user_id": r["user_id"], "winner_name": r["winner_name"],
+         "total_cents": int(r["subtotal"] + round(r["subtotal"] * pct / 100))}
+        for r in owed_rows if r["user_id"] not in paid_ids
+    ]
     return render_template("admin/winners.html", auction=auction, lots=lots,
                            payments=payments, pay_summary=pay_summary,
+                           winners_owed=winners_owed,
                            stripe_configured=stripe_configured())
+
+
+@app.route("/admin/auction/<int:auction_id>/payment/record", methods=["POST"])
+@admin_required
+def admin_record_payment(auction_id):
+    """Record a manual (cash / e-transfer) payment from a winner."""
+    db = get_db()
+    auction = db.execute("SELECT * FROM auctions WHERE id = ?",
+                         (auction_id,)).fetchone()
+    if not auction:
+        abort(404)
+    user_id = request.form.get("user_id", type=int)
+    method = request.form.get("method", "")
+    amount_cents = request.form.get("amount_cents", type=int)
+    if method not in ("cash", "etransfer"):
+        flash("Choose cash or e-transfer.", "error")
+        return redirect(url_for("admin_winners", auction_id=auction_id))
+    winner_lots = db.execute(
+        """SELECT id, current_bid_cents FROM lots
+           WHERE auction_id = ? AND status = 'sold' AND current_bidder_id = ?""",
+        (auction_id, user_id)).fetchall()
+    if not winner_lots:
+        flash("That bidder has no sold lots in this auction.", "error")
+        return redirect(url_for("admin_winners", auction_id=auction_id))
+    pct = auction["buyers_premium_pct"] or 0
+    subtotal = sum(l["current_bid_cents"] for l in winner_lots)
+    premium = int(round(subtotal * pct / 100))
+    total = subtotal + premium
+    if not amount_cents or amount_cents <= 0:
+        amount_cents = total
+    db.execute(
+        """INSERT INTO payments (user_id, auction_id, lot_ids, amount_cents,
+                                 premium_cents, currency, status, method, created_at)
+           VALUES (?, ?, ?, ?, ?, 'cad', 'succeeded', ?, ?)""",
+        (user_id, auction_id, ",".join(str(l["id"]) for l in winner_lots),
+         amount_cents, premium, method, utcnow().isoformat()))
+    db.commit()
+    flash(f"Recorded {method} payment of "
+          f"${amount_cents/100:,.2f}.", "success")
+    return redirect(url_for("admin_winners", auction_id=auction_id))
 
 
 # ------------------------------------------------------------ admin: lots

@@ -31,6 +31,7 @@
     <nav class="nav">
       <a href="{{ url_for('index') }}">Auctions</a>
       <a href="{{ url_for('auction_directory') }}">Ontario Auctions</a>
+      <a href="{{ url_for('sell_with_kk') }}">Sell With Us</a>
       {% if current_user %}
         <a href="{{ url_for('account') }}">My Account</a>
         {% if current_user.is_admin %}

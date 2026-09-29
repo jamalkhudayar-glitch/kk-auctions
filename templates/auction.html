@@ -2,25 +2,59 @@
 {% block title %}{{ auction.title }} — K&amp;K Auctions{% endblock %}
 {% block content %}
 
-<div class="auction-head">
-  <div>
-    <h1>{{ auction.title }}</h1>
-    <p class="muted">{{ auction.description }}</p>
+<div class="hibid">
+  <div class="hibid-company">
+    <h1>K&amp;K AUCTIONS</h1>
+    <p><strong>Greater Toronto Area</strong></p>
+    <p><strong>Ontario, Canada</strong>
+      <a href="https://maps.google.com/?q=Greater+Toronto+Area,+Ontario" target="_blank" rel="noopener">Map</a>
+    </p>
   </div>
-  <div class="auction-timer">
+
+  <div class="hibid-dates">
+    <p>Date(s) {{ auction.starts_at[5:7]|int }}/{{ auction.starts_at[8:10]|int }}/{{ auction.starts_at[:4] }} - {{ auction.ends_at[5:7]|int }}/{{ auction.ends_at[8:10]|int }}/{{ auction.ends_at[:4] }}</p>
+    {% if state == 'upcoming' %}
+    <p>Bidding opens {{ auction.starts_at|hibid_dt }}---</p>
+    {% endif %}
+    <p>Bidding closes {{ auction.ends_at|hibid_dt }} with items selling/closing continuously throughout the day</p>
+    <p>This auction uses bid extension.</p>
+    {% if auction.buyers_premium_pct %}<p>Please note Buyer's Premium of {{ auction.buyers_premium_pct }}% applies to all purchases</p>{% endif %}
+    {% if auction.description %}<p>{{ auction.description }}</p>{% endif %}
+  </div>
+
+  <div class="hibid-countdown">
     {% if state == 'live' %}
       <div class="pill pill-live">🔴 LIVE</div>
-      <div class="countdown big" data-countdown data-ends="{{ auction.ends_at }}">…</div>
-      <div class="muted small">Soft close: bids in the last {{ auction.soft_close_minutes }} min extend the auction</div>
+      <p>Bidding closes in <span class="countdown big" data-countdown data-ends="{{ auction.ends_at }}">…</span></p>
     {% elif state == 'upcoming' %}
-      <div class="pill pill-soon">UPCOMING</div>
-      <div class="countdown big" data-countdown data-ends="{{ auction.starts_at }}">…</div>
+      <p>Bidding opens in <span class="countdown big" data-countdown data-ends="{{ auction.starts_at }}">…</span></p>
     {% else %}
       <div class="pill pill-ended">ENDED</div>
     {% endif %}
-    {% if auction.buyers_premium_pct %}<div class="muted small">Buyer's premium: {{ auction.buyers_premium_pct }}%</div>{% endif %}
+    <p><strong>Online Only Auction</strong></p>
+    <p><strong>Local Pickup Only</strong></p>
+  </div>
+
+  <div class="hibid-notice">
+    <h2>Bidding Notice:</h2>
+    <p><strong><em>THIS AUCTION IS AT OUR GREATER TORONTO AREA LOCATION</em></strong></p>
+    <p>--&gt; PICK UPS ARE BY APPOINTMENT ONLY</p>
+    <p>--&gt; WE DO NOT OFFER SHIPPING</p>
+    <p>--&gt; ALL ITEMS SOLD AS-IS, WHERE-IS</p>
+  </div>
+
+  <div class="hibid-contact">
+    <h3>Contact Information</h3>
+    <p><strong>Address:</strong> Greater Toronto Area, Ontario, Canada</p>
+    <p><strong>Phone:</strong> <a href="tel:{{ business_phone }}">{{ business_phone }}</a>,
+       <strong>Email:</strong> <a href="mailto:Jamalkhudayar@gmail.com">Jamalkhudayar@gmail.com</a>,
+       <strong>Website:</strong> <a href="{{ url_for('index', _external=True) }}">K&amp;K Auctions</a></p>
   </div>
 </div>
+
+<hr class="hibid-sep">
+
+<h2 class="section-title">{{ auction.title }} — Lots</h2>
 
 <form class="filters" method="get">
   <input type="search" name="q" placeholder="Search lots…" value="{{ q }}">

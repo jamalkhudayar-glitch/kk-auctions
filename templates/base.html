@@ -30,6 +30,7 @@
     </a>
     <nav class="nav">
       <a href="{{ url_for('index') }}">Auctions</a>
+      <a href="{{ url_for('auction_directory') }}">Ontario Auctions</a>
       {% if current_user %}
         <a href="{{ url_for('account') }}">My Account</a>
         {% if current_user.is_admin %}
@@ -76,6 +77,7 @@
       <div class="footer-col">
         <h4>Auctions</h4>
         <a href="{{ url_for('index') }}">Current auctions</a>
+        <a href="{{ url_for('auction_directory') }}">Ontario auction companies</a>
         <a href="{{ url_for('register') }}">Register to bid</a>
         <a href="{{ url_for('login') }}">Log in</a>
         <a href="{{ url_for('terms') }}">Terms &amp; Conditions</a>

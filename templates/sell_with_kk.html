@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Sell With K&K — Consign Your Equipment{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Sell With K&amp;K</h1>
+  <p class="muted">Where do auction lots come from? From sellers like you.</p>
+</div>
+
+<div class="consign-body">
+  <p>Most auction lots sold by Ontario auction houses — from Bryan's to Ritchie Bros. —
+  don't come from the auction house itself. They come from <strong>consignors</strong>:
+  farmers, contractors, construction companies, equipment dealers, estates, and businesses
+  liquidating surplus or closing down. The auction house sells on their behalf, and the
+  consignor gets paid after the auction.</p>
+
+  <h2>Who consigns equipment?</h2>
+  <ul class="consign-list">
+    <li><strong>Farmers</strong> — retiring, downsizing, or upgrading machinery</li>
+    <li><strong>Contractors &amp; construction companies</strong> — clearing surplus equipment</li>
+    <li><strong>Equipment dealers</strong> — moving trade-ins and overstock</li>
+    <li><strong>Estates &amp; downsizers</strong> — dispersing farm, shop or household assets</li>
+    <li><strong>Businesses closing or relocating</strong> — liquidating everything at once</li>
+  </ul>
+
+  <h2>How consigning with K&amp;K works</h2>
+  <ol class="consign-steps">
+    <li><strong>Contact us</strong> — call or email with details and photos of your items.</li>
+    <li><strong>Drop off or arrange pickup</strong> — bring items to our location, or for large
+        dispersals we can handle the sale on your site.</li>
+    <li><strong>We photograph, describe and list it</strong> — professional presentation in our
+        timed-online auction catalog.</li>
+    <li><strong>It sells in our monthly auction</strong> — your items reach bidders across Ontario.</li>
+    <li><strong>We collect payment and settle with you</strong> — a simple settlement after the sale.</li>
+  </ol>
+
+  <h2>Why consign with K&amp;K?</h2>
+  <ul class="consign-list">
+    <li>No upfront fees — we work on a commission basis</li>
+    <li>Monthly timed-online auctions with a growing bidder base</li>
+    <li>We handle the photos, listings, marketing and payment collection</li>
+    <li>One call sells everything — from a single skid-steer bucket to a full fleet</li>
+  </ul>
+
+  <div class="consign-cta">
+    <h3>Ready to turn your equipment into cash?</h3>
+    <p>Contact Jamal Khudayar — <a href="tel:{{ business_phone }}">{{ business_phone }}</a> ·
+    <a href="mailto:{{ business_email }}">{{ business_email }}</a></p>
+    <a class="btn btn-brand" href="{{ url_for('auction_directory') }}">See the Ontario auction market</a>
+  </div>
+</div>
+{% endblock %}

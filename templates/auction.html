@@ -48,8 +48,10 @@
   <div class="hibid-contact">
     <h3>Contact Information</h3>
     <p><strong>Address:</strong> Greater Toronto Area, Ontario, Canada</p>
-    <p><strong>Phone:</strong> <a href="tel:{{ business_phone }}">{{ business_phone }}</a> · <a href="tel:{{ business_phone2 }}">{{ business_phone2 }}</a>,
-       <strong>Email:</strong> <a href="mailto:Jamalkhudayar@gmail.com">Jamalkhudayar@gmail.com</a>,
+    <p><strong>{{ jamal_name }}:</strong> <a href="tel:{{ business_phone }}">{{ business_phone }}</a>,
+       <a href="mailto:{{ business_email }}">{{ business_email }}</a><br>
+       <strong>{{ mustafa_name }}:</strong> <a href="tel:{{ business_phone2 }}">{{ business_phone2 }}</a>,
+       <a href="mailto:{{ mustafa_email }}">{{ mustafa_email }}</a><br>
        <strong>Website:</strong> <a href="{{ url_for('index', _external=True) }}">K&amp;K Auctions</a></p>
   </div>
 </div>

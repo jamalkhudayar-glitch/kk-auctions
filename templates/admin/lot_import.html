@@ -13,7 +13,7 @@
       <input type="file" name="csv_file" accept=".csv" required>
     </label>
   </div>
-  <button class="btn btn-gold" type="submit">Import lots</button>
+  <button class="btn btn-brand" type="submit">Import lots</button>
   <a class="btn btn-outline" href="{{ url_for('admin_sample_csv') }}">Download template</a>
 </form>
 <p class="muted">Columns: <code>lot_number, title, description, category, starting_bid, bid_increment</code>.
@@ -27,7 +27,7 @@ Rows with a missing title or lot number are skipped. Existing lot numbers are no
       <input type="file" name="zip_file" accept=".zip" required>
     </label>
   </div>
-  <button class="btn btn-gold" type="submit">Attach photos</button>
+  <button class="btn btn-brand" type="submit">Attach photos</button>
 </form>
 <p class="muted">Name each photo <code>&lt;lot_number&gt;_&lt;photo_number&gt;.jpg</code> —
 e.g. <code>12_1.jpg</code>, <code>12_2.jpg</code> attach to lot 12.

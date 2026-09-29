@@ -35,12 +35,12 @@
       </select>
     </label>
   </div>
-  <button class="btn btn-gold btn-lg" type="submit">{{ 'Save changes' if auction else 'Create auction' }}</button>
+  <button class="btn btn-brand btn-lg" type="submit">{{ 'Save changes' if auction else 'Create auction' }}</button>
 </form>
 
 {% if auction %}
 <h2>Lots in this auction</h2>
-<p><a class="btn btn-gold" href="{{ url_for('admin_lot_new', auction_id=auction.id) }}">+ Add lot</a>
+<p><a class="btn btn-brand" href="{{ url_for('admin_lot_new', auction_id=auction.id) }}">+ Add lot</a>
 <a class="btn btn-outline" href="{{ url_for('admin_lot_import', auction_id=auction.id) }}">Bulk import</a></p>
 <table class="bids admin-table">
   <tr><th>#</th><th>Title</th><th>Category</th><th>Current bid</th><th>Bids</th><th>Status</th><th></th></tr>

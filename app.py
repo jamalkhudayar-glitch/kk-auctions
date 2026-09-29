@@ -41,6 +41,10 @@ app.config["MAX_CONTENT_LENGTH"] = 64 * 1024 * 1024  # 64 MB uploads
 
 BUSINESS_PHONE = "6476793420"
 BUSINESS_PHONE2 = "6478343544"
+BUSINESS_EMAIL = "Jamalkhudayar@gmail.com"
+MUSTAFA_NAME = "Mustafa Khudayar"
+MUSTAFA_EMAIL = "Mustafa.khudayar@gmail.com"
+JAMAL_NAME = "Jamal Khudayar"
 
 STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
 STRIPE_PUBLISHABLE_KEY = os.environ.get("STRIPE_PUBLISHABLE_KEY", "")
@@ -214,8 +218,8 @@ def migrate_db(db):
         db.execute("ALTER TABLE payments ADD COLUMN premium_cents INTEGER NOT NULL DEFAULT 0")
     if "method" not in pcols:
         db.execute("ALTER TABLE payments ADD COLUMN method TEXT NOT NULL DEFAULT 'card'")
-    # One-time correction (2026-09-28): remove the other-business buying
-    # identity from the original seed data; match Bryan's auction categories.
+    # One-time correction (2026-09-28): align original seed content with the
+    # auction's category lineup (Bryan's-style categories).
     # Only touches rows that still carry the original seed content.
     db.execute(
         """UPDATE auctions SET description = ?
@@ -244,7 +248,30 @@ def migrate_db(db):
              "Bundle of SPF 2x4 lumber, 8 ft lengths. Sold as one lot, as-is. "
              "Buyer responsible for loading and transport.",
              "building materials", lot6["id"]))
-    db.execute("UPDATE lots SET category = 'equipment' WHERE category = 'catalytic converters'")
+    # Second correction (2026-09-28): only Bryan's-style categories —
+    # no engines, transmissions, rims, batteries or other-business items.
+    bryan_fixes = [
+        ("4.6L V8 Engine — Ford F-150 (Used, Turns Over)",
+         "72\" Skid Steer Bucket — Heavy Equipment Attachment",
+         "72-inch skid steer bucket with universal quick-attach mount. Used, good "
+         "cutting edge. Sold as-is, where-is.", "heavy equipment"),
+        ("Set of 4 — DAI Barrett 17x8 Gloss Black Rims (New in Box)",
+         "Set of 4 LT All-Terrain Truck Tires (New)",
+         "Four new LT265/70R17 all-terrain truck tires. Never mounted. "
+         "Sold as a set of four, as-is.", "tires"),
+        ("4-Speed Automatic Transmission — Chevrolet Silverado",
+         "5 ft Rotary Cutter — 3-Point Hitch Farm Implement",
+         "5-foot rotary cutter for 3-point hitch, PTO driven. Used, in working "
+         "condition. Sold as-is, where-is.", "farm equipment"),
+    ]
+    for old_title, new_title, new_desc, new_cat in bryan_fixes:
+        row = db.execute("SELECT id FROM lots WHERE title = ?", (old_title,)).fetchone()
+        if row:
+            db.execute(
+                "UPDATE lots SET title = ?, description = ?, category = ? WHERE id = ?",
+                (new_title, new_desc, new_cat, row["id"]))
+    db.execute("UPDATE lots SET category = 'equipment' WHERE category IN"
+               " ('catalytic converters', 'engines', 'transmissions', 'rims')")
     db.commit()
 
 
@@ -267,9 +294,9 @@ CATEGORY_ART = {
     "farm equipment": ("🚜", "Farm Equipment"),
     "heavy equipment": ("🏗️", "Heavy Equipment"),
     "building materials": ("🪵", "Building Materials"),
-    "rims": ("🛞", "Rims"),
-    "equipment": ("🚜", "Equipment"),
-    "parts": ("🧰", "Auto Parts"),
+    "tires": ("🛞", "Tires"),
+    "equipment": ("🧰", "Equipment"),
+    "parts": ("🧰", "Parts"),
 }
 
 
@@ -349,18 +376,18 @@ def seed_db(db):
          "Mixed lot of contractor-grade power tools and hand tools. Various brands, "
          "used condition. Sold as a single lot, as-is, where-is.",
          "equipment", 20000, 1000),
-        (3, "4.6L V8 Engine — Ford F-150 (Used, Turns Over)",
-         "Used 4.6L Triton V8 pulled from a 2008 Ford F-150. Engine turns over by "
-         "hand; sold as-is for rebuild or parts. Pickup only — bring help, it's heavy.",
-         "engines", 30000, 1500),
-        (4, "Set of 4 — DAI Barrett 17x8 Gloss Black Rims (New in Box)",
-         "Brand new in box DAI Barrett gloss black rims. 17x8, 8x165.1 bolt pattern, "
-         "+20 offset. Fits heavy duty trucks and full-size SUVs. Retail over $900.",
-         "rims", 58500, 2000),
-        (5, "4-Speed Automatic Transmission — Chevrolet Silverado",
-         "Used 4L60E automatic transmission from a 2010 Chevrolet Silverado 1500. "
-         "Was driving when removed. Sold as-is, where-is.",
-         "transmissions", 25000, 1000),
+        (3, "72\" Skid Steer Bucket — Heavy Equipment Attachment",
+         "72-inch skid steer bucket with universal quick-attach mount. Used, good "
+         "cutting edge. Sold as-is, where-is.",
+         "heavy equipment", 30000, 1500),
+        (4, "Set of 4 LT All-Terrain Truck Tires (New)",
+         "Four new LT265/70R17 all-terrain truck tires. Never mounted. "
+         "Sold as a set of four, as-is.",
+         "tires", 58500, 2000),
+        (5, "5 ft Rotary Cutter — 3-Point Hitch Farm Implement",
+         "5-foot rotary cutter for 3-point hitch, PTO driven. Used, in working "
+         "condition. Sold as-is, where-is.",
+         "farm equipment", 25000, 1000),
         (6, "Bundle of 2x4 Lumber — Building Materials Lot",
          "Bundle of SPF 2x4 lumber, 8 ft lengths. Sold as one lot, as-is. "
          "Buyer responsible for loading and transport.",
@@ -412,7 +439,9 @@ def admin_required(view):
 @app.context_processor
 def inject_common():
     return {"current_user": current_user(), "business_phone": BUSINESS_PHONE,
-            "business_phone2": BUSINESS_PHONE2}
+            "business_phone2": BUSINESS_PHONE2, "business_email": BUSINESS_EMAIL,
+            "jamal_name": JAMAL_NAME, "mustafa_name": MUSTAFA_NAME,
+            "mustafa_email": MUSTAFA_EMAIL}
 
 
 @app.template_filter("hibid_dt")
@@ -1195,8 +1224,8 @@ def admin_sample_csv():
     """Downloadable CSV template for bulk lot import."""
     from flask import Response
     sample = ("lot_number,title,description,category,starting_bid,bid_increment\n"
-              '1,2012 Honda Civic EX,"Sedan, 180k km, runs well",vehicles,500,25\n'
-              '2,Catalytic converter - Honda,"OEM, code 5K12",converters,40,5\n')
+              '1,2012 Honda Civic EX,"Sedan, 180k km, runs well",cars,500,25\n'
+              '2,72in Skid Steer Bucket,"Quick-attach, used",heavy equipment,300,15\n')
     return Response(sample, mimetype="text/csv",
                     headers={"Content-Disposition": "attachment; filename=lots_template.csv"})
 

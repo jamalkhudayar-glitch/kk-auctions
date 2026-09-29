@@ -32,3 +32,18 @@ document.querySelectorAll("[data-countdown]").forEach(el => {
 
 tick();
 setInterval(tick, 1000);
+
+// "Stay Up To Date" email signup band — front-end only: opens a
+// pre-addressed email so the visitor can join the auction update list.
+const subForm = document.getElementById("subscribe-form");
+if (subForm) {
+  subForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const email = subForm.email.value.trim();
+    if (!email) return;
+    const subject = encodeURIComponent("Subscribe me to K&K Auctions updates");
+    const body = encodeURIComponent("Please add " + email + " to the K&K Auctions email list for upcoming auction updates.");
+    window.location.href = "mailto:Jamalkhudayar@gmail.com?subject=" + subject + "&body=" + body;
+    subForm.reset();
+  });
+}

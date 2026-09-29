@@ -48,11 +48,11 @@
           <label>Your max bid (min {{ min_bid|money }})
             <input type="number" name="amount" step="0.01" min="{{ '%.2f'|format(min_bid / 100) }}" value="{{ '%.2f'|format(min_bid / 100) }}" required>
           </label>
-          <button class="btn btn-gold btn-lg" type="submit">Place bid</button>
+          <button class="btn btn-brand btn-lg" type="submit">Place bid</button>
         </form>
         <p class="muted small">Bids in the last {{ lot.soft_close_minutes }} minutes extend the auction by {{ lot.soft_close_minutes }} minutes.</p>
       {% elif not user %}
-        <p><a class="btn btn-gold" href="{{ url_for('login', next=request.path) }}">Log in to bid</a>
+        <p><a class="btn btn-brand" href="{{ url_for('login', next=request.path) }}">Log in to bid</a>
         <a class="btn btn-outline" href="{{ url_for('register') }}">Register</a></p>
       {% endif %}
 

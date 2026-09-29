@@ -690,6 +690,69 @@ def terms():
     return render_template("terms.html")
 
 
+# ------------------------------------------------- auction directory
+ONTARIO_AUCTION_COMPANIES = [
+    {"name": "Bryan's Auction Services",
+     "location": "Puslinch & Trenton, ON",
+     "website": "https://bryansauction.com",
+     "sells": "Farm & heavy equipment, vehicles, building materials, consumer goods — monthly timed-online consignment auctions."},
+    {"name": "Ritchie Bros. Auctioneers",
+     "location": "Bolton, ON (also Ottawa/Kemptville)",
+     "website": "https://www.rbauction.com",
+     "sells": "Unreserved heavy equipment, trucks and agricultural equipment."},
+    {"name": "Sunrise Equipment Auctions Inc.",
+     "location": "Norwich, ON",
+     "website": "https://sunrise-equipment.com",
+     "sells": "Farm, industrial and construction equipment, estates, retirement and truck & trailer sales."},
+    {"name": "AllStar Auctions Inc.",
+     "location": "Binbrook & Oro-Medonte, ON",
+     "website": "https://www.allstar-auctions.com",
+     "sells": "Heavy equipment, farm machinery and trucks."},
+    {"name": "McLean Auctions",
+     "location": "Lindsay, ON",
+     "website": "https://www.mcleanauctions.com",
+     "sells": "Construction equipment & attachments, containers, travel trailers, trucks, farm and lawn equipment, tools."},
+    {"name": "Kevin Barker & Greg Snoddon Auctions Ltd",
+     "location": "Woodville (Kawartha Lakes), ON",
+     "website": "https://kevinbarkerauctions.com",
+     "sells": "Estate, liquidation, farm, machinery & equipment and construction auctions."},
+    {"name": "Snider's Sydenham Auction / Rockford Auction Centre",
+     "location": "Owen Sound, ON",
+     "website": "https://www.auctionguide.com/auction/home-renovation-lumber-new-equipment-auction-2026-2-10-200573/",
+     "sells": "Home renovation, lumber and new equipment — mini excavators, skid steers, containers, kitchens, flooring."},
+    {"name": "Reinhart Auctions",
+     "location": "Caledon, ON",
+     "website": "https://reinhartauctions.com",
+     "sells": "Antiques, collectibles, farm machinery & supplies, estates — since 1952."},
+    {"name": "MaxSold",
+     "location": "Ontario-wide (Toronto, Kingston & more)",
+     "website": "https://maxsold.com",
+     "sells": "Online downsizing, estate and business-liquidation auctions."},
+    {"name": "Kelsobid.com",
+     "location": "Guelph, ON",
+     "website": "https://kelsobid.com",
+     "sells": "Business and warehouse surplus auctions."},
+    {"name": "Doug Mitchell Auctions",
+     "location": "Omemee, ON",
+     "website": "https://www.globalauctionguide.com/ontario-auctions/omemee/doug-mitchell-auctions-sept-farm-machinery-and-consignment-18749.html",
+     "sells": "Farm machinery and consignment auctions."},
+    {"name": "Consignbid.ca / AuctionsOntario.ca",
+     "location": "Ontario-wide, online",
+     "website": "https://auctionsontario.ca",
+     "sells": "Farm, truck & heavy equipment online consignment — sell it where it sits."},
+    {"name": "Alex Lyon & Son",
+     "location": "New York, US (co-presents Ontario sales)",
+     "website": "https://www.lyonauction.com",
+     "sells": "Construction and farm equipment auctions."},
+]
+
+
+@app.route("/ontario-auction-companies")
+def auction_directory():
+    return render_template("auction_directory.html",
+                           companies=ONTARIO_AUCTION_COMPANIES)
+
+
 # ------------------------------------------------------------------ auth
 @app.route("/register", methods=["GET", "POST"])
 def register():

@@ -493,3 +493,7 @@ label.check input[type="checkbox"] { width: 19px; height: 19px; margin-top: 2px;
 .paypick-col ul { margin: 0; padding-left: 20px; }
 .paypick-col li { margin-bottom: 10px; line-height: 1.6; }
 @media (max-width: 700px) { .lot-paypick { grid-template-columns: 1fr; } }
+
+/* ---------- manual payment form (admin winners) ---------- */
+.pay-form { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; background: var(--bg-soft); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 20px; margin: 0 0 20px; }
+.pay-form select, .pay-form input { padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; font-size: 0.95rem; }

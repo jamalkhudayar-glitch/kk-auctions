@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-K&K Auctions — timed online auction site for K&K Bin Cleanup.
+K&K Auctions — timed online auction site.
 Stack: Flask + sqlite3 (stdlib) + Werkzeug. No ORM, no build step.
 """
 import os
@@ -214,6 +214,37 @@ def migrate_db(db):
         db.execute("ALTER TABLE payments ADD COLUMN premium_cents INTEGER NOT NULL DEFAULT 0")
     if "method" not in pcols:
         db.execute("ALTER TABLE payments ADD COLUMN method TEXT NOT NULL DEFAULT 'card'")
+    # One-time correction (2026-09-28): remove the other-business buying
+    # identity from the original seed data; match Bryan's auction categories.
+    # Only touches rows that still carry the original seed content.
+    db.execute(
+        """UPDATE auctions SET description = ?
+           WHERE description LIKE '%catalytic converters and rims%'""",
+        ("Welcome to K&K Auctions! Our grand opening timed auction features quality "
+         "vehicles, farm & construction equipment, building materials, tools, tires "
+         "and more — all sold to the highest bidder. Pickup in the Greater Toronto "
+         "Area. Call/text " + BUSINESS_PHONE + " with any questions.",))
+    lot2 = db.execute(
+        "SELECT id FROM lots WHERE title = 'Lot of 5 OEM Catalytic Converters'"
+    ).fetchone()
+    if lot2:
+        db.execute(
+            "UPDATE lots SET title = ?, description = ?, category = ? WHERE id = ?",
+            ("Contractor Tool Lot — Power Tools & Hand Tools",
+             "Mixed lot of contractor-grade power tools and hand tools. Various brands, "
+             "used condition. Sold as a single lot, as-is, where-is.",
+             "equipment", lot2["id"]))
+    lot6 = db.execute(
+        "SELECT id FROM lots WHERE title = 'Scrap Engine Lot — 3 Aluminum Blocks'"
+    ).fetchone()
+    if lot6:
+        db.execute(
+            "UPDATE lots SET title = ?, description = ?, category = ? WHERE id = ?",
+            ("Bundle of 2x4 Lumber — Building Materials Lot",
+             "Bundle of SPF 2x4 lumber, 8 ft lengths. Sold as one lot, as-is. "
+             "Buyer responsible for loading and transport.",
+             "building materials", lot6["id"]))
+    db.execute("UPDATE lots SET category = 'equipment' WHERE category = 'catalytic converters'")
     db.commit()
 
 
@@ -233,9 +264,9 @@ def init_db():
 # ------------------------------------------------------- placeholder images
 CATEGORY_ART = {
     "cars": ("🚗", "Vehicle"),
-    "catalytic converters": ("🔧", "Catalytic Converter"),
-    "engines": ("⚙️", "Engine"),
-    "transmissions": ("🔩", "Transmission"),
+    "farm equipment": ("🚜", "Farm Equipment"),
+    "heavy equipment": ("🏗️", "Heavy Equipment"),
+    "building materials": ("🪵", "Building Materials"),
     "rims": ("🛞", "Rims"),
     "equipment": ("🚜", "Equipment"),
     "parts": ("🧰", "Auto Parts"),
@@ -301,9 +332,9 @@ def seed_db(db):
         " soft_close_minutes, status, created_at) VALUES (?, ?, ?, ?, 5, 'active', ?)",
         ("Grand Opening Auction",
          "Welcome to K&K Auctions! Our grand opening timed auction features quality "
-         "used vehicles, engines, transmissions, catalytic converters and rims — "
-         "all sold to the highest bidder. Pickup in the Greater Toronto Area. "
-         "Call/text " + BUSINESS_PHONE + " with any questions.",
+         "vehicles, farm & construction equipment, building materials, tools, tires "
+         "and more — all sold to the highest bidder. Pickup in the Greater Toronto "
+         "Area. Call/text " + BUSINESS_PHONE + " with any questions.",
          starts.isoformat(), ends.isoformat(), now),
     )
     auction_id = cur.lastrowid
@@ -314,11 +345,10 @@ def seed_db(db):
          "drives. Some cosmetic wear consistent with age. Sold as-is, where-is. "
          "Great parts car or budget daily driver with a little TLC.",
          "cars", 50000, 2500),
-        (2, "Lot of 5 OEM Catalytic Converters",
-         "Mixed lot of five original-equipment catalytic converters removed from "
-         "scrapped vehicles (Honda, Toyota, Ford applications). Sold as a single lot, "
-         "as-is. Buyer responsible for any environmental handling requirements.",
-         "catalytic converters", 20000, 1000),
+        (2, "Contractor Tool Lot — Power Tools & Hand Tools",
+         "Mixed lot of contractor-grade power tools and hand tools. Various brands, "
+         "used condition. Sold as a single lot, as-is, where-is.",
+         "equipment", 20000, 1000),
         (3, "4.6L V8 Engine — Ford F-150 (Used, Turns Over)",
          "Used 4.6L Triton V8 pulled from a 2008 Ford F-150. Engine turns over by "
          "hand; sold as-is for rebuild or parts. Pickup only — bring help, it's heavy.",
@@ -331,10 +361,10 @@ def seed_db(db):
          "Used 4L60E automatic transmission from a 2010 Chevrolet Silverado 1500. "
          "Was driving when removed. Sold as-is, where-is.",
          "transmissions", 25000, 1000),
-        (6, "Scrap Engine Lot — 3 Aluminum Blocks",
-         "Lot of three aluminum engine blocks for scrap/recycling value. Various "
-         "4-cylinder applications. Sold as one lot, as-is.",
-         "engines", 10000, 500),
+        (6, "Bundle of 2x4 Lumber — Building Materials Lot",
+         "Bundle of SPF 2x4 lumber, 8 ft lengths. Sold as one lot, as-is. "
+         "Buyer responsible for loading and transport.",
+         "building materials", 10000, 500),
     ]
     for num, title, desc, cat, start_cents, incr_cents in sample_lots:
         db.execute(

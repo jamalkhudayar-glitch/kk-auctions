@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Ontario Auction Companies — K&K Auctions{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Ontario Auction Companies</h1>
+  <p class="muted">A directory of auction houses across Ontario selling farm &amp; heavy equipment,
+  vehicles, building materials and more — the same market K&amp;K Auctions serves.</p>
+</div>
+
+<div class="dir-grid">
+  {% for c in companies %}
+  <div class="dir-card">
+    <h3>{{ c.name }}</h3>
+    <p class="dir-loc">📍 {{ c.location }}</p>
+    <p class="dir-sells">{{ c.sells }}</p>
+    <a class="btn btn-blue btn-sm" href="{{ c.website }}" target="_blank" rel="noopener">Visit website</a>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

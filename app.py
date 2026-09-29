@@ -40,6 +40,7 @@ app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-me")
 app.config["MAX_CONTENT_LENGTH"] = 64 * 1024 * 1024  # 64 MB uploads
 
 BUSINESS_PHONE = "6476793420"
+BUSINESS_PHONE2 = "6478343544"
 
 STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
 STRIPE_PUBLISHABLE_KEY = os.environ.get("STRIPE_PUBLISHABLE_KEY", "")
@@ -380,7 +381,8 @@ def admin_required(view):
 
 @app.context_processor
 def inject_common():
-    return {"current_user": current_user(), "business_phone": BUSINESS_PHONE}
+    return {"current_user": current_user(), "business_phone": BUSINESS_PHONE,
+            "business_phone2": BUSINESS_PHONE2}
 
 
 @app.template_filter("hibid_dt")

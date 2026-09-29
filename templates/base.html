@@ -10,6 +10,15 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+<div class="topbar">
+  <div class="wrap topbar-inner">
+    <span>📍 Ontario, Canada — timed online auctions</span>
+    <span class="topbar-right">
+      <a href="tel:{{ business_phone }}">📞 {{ business_phone }}</a>
+      <a href="mailto:Jamalkhudayar@gmail.com">✉️ Jamalkhudayar@gmail.com</a>
+    </span>
+  </div>
+</div>
 <header class="site-header">
   <div class="wrap header-inner">
     <a class="brand" href="{{ url_for('index') }}">

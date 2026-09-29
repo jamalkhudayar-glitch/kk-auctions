@@ -462,3 +462,19 @@ label.check input[type="checkbox"] { width: 19px; height: 19px; margin-top: 2px;
   table.bids th, table.bids td { padding: 9px 8px; }
   .section-title { font-size: 1.5rem; }
 }
+
+/* ---------- HiBid-style auction listing (Bryan's format) ---------- */
+.hibid { max-width: 860px; margin: 8px auto 0; }
+.hibid-company h1 { font-size: 1.9rem; text-transform: uppercase; letter-spacing: 1px; color: var(--brand-dark); margin: 0 0 6px; }
+.hibid-company p { margin: 2px 0; font-size: 1.05rem; }
+.hibid-dates { margin: 22px 0; }
+.hibid-dates p { margin: 8px 0; }
+.hibid-countdown { margin: 22px 0; }
+.hibid-countdown p { margin: 8px 0; font-size: 1.05rem; }
+.hibid-notice { margin: 26px 0; }
+.hibid-notice h2 { font-size: 1.3rem; margin: 0 0 10px; }
+.hibid-notice p { margin: 6px 0; }
+.hibid-contact { margin: 26px 0 8px; }
+.hibid-contact h3 { font-size: 1.15rem; margin: 0 0 8px; }
+.hibid-contact p { margin: 6px 0; }
+.hibid-sep { border: none; border-top: 2px solid var(--line); margin: 30px 0; }
